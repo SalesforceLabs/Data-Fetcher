@@ -1,0 +1,20 @@
+{
+    "packageDirectories": [
+        {
+            "path": "force-app",
+            "default": true,
+            "package": "Data Fetcher",
+            "versionName": "ver 0.1",
+            "versionNumber": "0.2.0.0",
+            "ancestorVersion": "HIGHEST"
+        }
+    ],
+    "name": "Data Fetcher Salesforce Labs",
+    "namespace": "joshdaymentlabs",
+    "sfdcLoginUrl": "https://login.salesforce.com",
+    "sourceApiVersion": "56.0",
+    "packageAliases": {
+        "Data Fetcher": "0HoDm000000fxTYKAY",
+        "Data Fetcher@0.2.0-1": "04tDm000000518kIAA"
+    }
+}
