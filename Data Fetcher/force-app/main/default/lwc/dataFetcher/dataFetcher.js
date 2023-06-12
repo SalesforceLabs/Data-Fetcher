@@ -1,3 +1,10 @@
+/**
+ * @description       : 
+ * @author            : Josh Dayment
+ * @group             : 
+ * @last modified on  : 06-06-2023
+ * @last modified by  : Josh Dayment
+**/
 import { api,track, LightningElement } from "lwc";
 import getSObjects from "@salesforce/apex/DataFetcherController.getSObjects";
 import { FlowAttributeChangeEvent } from "lightning/flowSupport";
@@ -13,7 +20,7 @@ export default class DataFetcher extends LightningElement {
   renderedCallback() {
     if (this.queryString && this.queryString != this.oldQuery) {
     this._getRecords();}
-    console.log("Records are: " + JSON.stringify(this.retrievedRecords))
+    //console.log("Records are: " + JSON.stringify(this.retrievedRecords))
   }
 
   handleOnChange() {
@@ -32,7 +39,10 @@ export default class DataFetcher extends LightningElement {
           this._fireFlowEvent("firstRetrievedRecord", this.firstRetrievedRecord);
           this._fireFlowEvent("retrievedRecords", this.retrievedRecords);
         })
-        .catch(this._displayError);
+        .catch(error => 
+          {this.error = error?.body?.message ?? JSON.stringify(error);
+          console.error(error.body.message);
+          this._fireFlowEvent("error", this.error);});
 
         this.oldQuery = this.queryString;
     
@@ -41,13 +51,7 @@ export default class DataFetcher extends LightningElement {
   _debounceGetRecords() {
     this._debounceTimer && clearTimeout(this._debounceTimer);
     this._debounceTimer = setTimeout(() => this._getRecords(), 300);
-  }
-
-  _displayError(error) {
-    this.error = error?.body?.message ?? JSON.stringify(error);
-    console.error(error);
-    this._fireFlowEvent("error", this.error);
-  }
+  }  
 
   _fireFlowEvent(eventName, data) {
     this.dispatchEvent(new FlowAttributeChangeEvent(eventName, data));
