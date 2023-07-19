@@ -2,7 +2,7 @@
   @description       : 
   @author            : Josh Dayment
   @group             : 
-  @last modified on  : 02-21-2023
+  @last modified on  : 07-05-2023
   @last modified by  : Josh Dayment
 -->
 <template>
@@ -10,4 +10,5 @@
     The Data Fetcher screen component on this screen is reporting the following Error: {error}
   </template>
   <span hidden><lightning-formatted-text value={queryString} onchange={handleOnChange}></lightning-formatted-text></span>
+  <span hidden><lightning-formatted-text value={aggQueryString} onchange={handleOnChange}></lightning-formatted-text></span>
 </template>
