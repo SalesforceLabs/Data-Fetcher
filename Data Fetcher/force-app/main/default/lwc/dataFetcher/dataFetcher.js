@@ -2,7 +2,7 @@
  * @description       : 
  * @author            : Josh Dayment
  * @group             : 
- * @last modified on  : 06-28-2023
+ * @last modified on  : 07-05-2023
  * @last modified by  : Josh Dayment
 **/
 import { api,track, LightningElement } from "lwc";
@@ -76,7 +76,12 @@ export default class DataFetcher extends LightningElement {
 
   _debounceGetRecords() {
     this._debounceTimer && clearTimeout(this._debounceTimer);
+    if (this.queryString){
     this._debounceTimer = setTimeout(() => this._getRecords(), 300);
+    }    
+    if (this.aggQueryString){
+      this._debounceTimer = setTimeout(() => this._getAggregate(), 300);
+      }
   }  
 
   _fireFlowEvent(eventName, data) {
