@@ -8,7 +8,11 @@
 public with sharing class DataFetcherController {
     @AuraEnabled
     public static QueryResult getSObjects(String queryString) {
-      return new QueryResult(Database.query(queryString, System.AccessLevel.USER_MODE));
+      if(queryString.startsWith('FIND')) {
+        return new QueryResult(Search.find(queryString, System.AccessLevel.USER_MODE));
+      } else {
+        return new QueryResult(Database.query(queryString, System.AccessLevel.USER_MODE));
+      }
     }
     
     @AuraEnabled
