@@ -23,7 +23,7 @@ const FLOW_EVENT_TYPE = {
     CHANGE: 'configuration_editor_input_value_changed'
 }
 
-const VALIDATEABLE_INPUTS = ['c-data-fetcher-c-p-e-combobox', 'c-data-fetcher-object-picker'];
+const VALIDATEABLE_INPUTS = ['joshdaymentlabs-data-fetcher-c-p-e-combobox', 'joshdaymentlabs-data-fetcher-object-picker'];
 
 export default class dataFectcherCPE extends LightningElement {
     @api automaticOutputVariables;
@@ -33,7 +33,7 @@ export default class dataFectcherCPE extends LightningElement {
     _flowVariables = [];
     _typeMappings = [];
     rendered;
-    @track isChecked = false;
+    @track isChecked = true;
 
     @track inputValues = {
         objectName1: { value: null, valueDataType: null, isCollection: false, label: 'Object Name' },
@@ -93,11 +93,12 @@ export default class dataFectcherCPE extends LightningElement {
     renderedCallback() {
         if (!this.rendered) {
             this.rendered = true;
-            for (let flowCombobox of this.template.querySelectorAll('c-data_fetcher_c_p_e_combobox')) {
+            for (let flowCombobox of this.template.querySelectorAll('joshdaymentlabs-data_fetcher_c_p_e_combobox')) {
                 flowCombobox.builderContext = this.builderContext;
                 flowCombobox.automaticOutputVariables = this.automaticOutputVariables;
-            }
+            }             
         }
+                
     }
 
     /* ACTION FUNCTIONS */
@@ -212,7 +213,7 @@ export default class dataFectcherCPE extends LightningElement {
     }
 
     dispatchFlowValueChangeEvent(id, newValue, dataType = DATA_TYPE.STRING) {
-        console.log('in dispatchFlowValueChangeEvent: ' + id, newValue, dataType);
+        //console.log('in dispatchFlowValueChangeEvent: ' + id, newValue, dataType);
         if (this.inputValues[id] && this.inputValues[id].serialized) {
             console.log('serializing value');
             newValue = JSON.stringify(newValue);
