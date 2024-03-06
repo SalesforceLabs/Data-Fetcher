@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>58.0</apiVersion>
+    <apiVersion>59.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Data Fetcher</masterLabel>
     <targets>
         <target>lightning__FlowScreen</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__FlowScreen">
-            <propertyType name="T" extends="SObject" label="Object API Name" description="Select the API Name of the SObject to Query"/>
+        <targetConfig targets="lightning__FlowScreen" configurationEditor="joshdaymentlabs-data-fetcher-c-p-e">
+            <propertyType name="T" extends="SObject"  label="Object API Name" description="Select the API Name of the SObject to Query"/>
+            <propertyType name="S" extends="SObject"  label="Second Object API Name" description="Select a Second Object for SOSL Query"/>
             <property name="queryString" label="SOQL Query" type="String" />
             <property name="firstRetrievedRecord" type="{T}" role="outputOnly" />
             <property name="retrievedRecords" type="{T[]}" role="outputOnly" />
             <property name="error" type="String" role="outputOnly" description="Error message when there is an error output from Data Fetcher"/>
             <property name="aggQueryString" type="String" label="Aggregate SOQL Query" description="An aggregate SOQL Query string to perform math operations in SOQL"/>
             <property name="aggQueryResult" type="Integer" role="outputOnly" description="Integer result from Aggregate Query"/>
+            <property name="searchString" type="String" label="SOSL Query String" description="A SOSL Query string to perform a SOSL search"/>
+            <property name="searchResults" type="{T[]}" role="outputOnly" />
+            <property name="searchResults1" type="{S[]}" role="outputOnly"/>
+            <property name="objectName1" type="String" default="Account"/>
+            <property name="objectName2" type="String" default="Account"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>
