@@ -1,0 +1,20 @@
+<!--
+  @description       : 
+  @author            : Josh Dayment
+  @group             : 
+  @last modified on  : 12-19-2023
+  @last modified by  : Josh Dayment
+-->
+<template>
+    <div class="field-picker">
+        <template if:true={isError}>
+            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme--error" role="alert">
+                <h2> {errorMessage} </h2>
+            </div>
+        </template>
+
+        <lightning-combobox name="objectTypeField" label={objectLabel} value={_objectType} placeholder={labels.none}
+            options={objectTypes} disabled={isObjectDisabled} onchange={handleObjectChange}
+            required={required} field-level-help=""></lightning-combobox>
+    </div>
+</template>
