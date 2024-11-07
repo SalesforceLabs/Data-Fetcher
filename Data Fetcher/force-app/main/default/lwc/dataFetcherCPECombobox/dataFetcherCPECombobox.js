@@ -1153,11 +1153,6 @@ export default class dataFetcherCPECombobox extends LightningElement {
         }
     }
 
-    @api
-    reportValidity() {
-        return !this.hasError;
-    }
-
     get formElementClass() {
         let resultClass = 'slds-form-element';
         if (this.hasError) {
