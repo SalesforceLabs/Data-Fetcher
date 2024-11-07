@@ -1,11 +1,4 @@
-/**
- * @description       : 
- * @author            : Josh Dayment
- * @group             : 
- * @last modified on  : 01-02-2024
- * @last modified by  : Josh Dayment
-**/
-import { LightningElement, api, wire, track } from 'lwc';
+import { LightningElement, api, track } from 'lwc';
 
 const DATA_TYPE = {
     STRING: 'String',
@@ -14,16 +7,10 @@ const DATA_TYPE = {
     INTEGER: 'Integer'
 };
 
-const defaults = {
-    inputAttributePrefix: 'select_',
-};
-
 const FLOW_EVENT_TYPE = {
     DELETE: 'configuration_editor_input_value_deleted',
     CHANGE: 'configuration_editor_input_value_changed'
 }
-
-const VALIDATEABLE_INPUTS = ['joshdaymentlabs-data-fetcher-c-p-e-combobox', 'joshdaymentlabs-data-fetcher-object-picker'];
 
 export default class dataFectcherCPE extends LightningElement {
     @api automaticOutputVariables;
@@ -41,6 +28,8 @@ export default class dataFectcherCPE extends LightningElement {
         queryString: { value: null, valueDataType: null, isCollection: false, label: 'SOQL Query String' },
         searchString: { value: null, valueDataType: null, isCollection: false, label: 'SOSL Query String' },
         aggQueryString: { value: null, valueDataType: null, isCollection: false, label: 'Aggregate Query String' },
+        debounceTime: {value: '300', valueDataType: null, isCollection: false, label: 'Debounce Time'},
+        
     };
 
     @api get builderContext() {
@@ -66,29 +55,12 @@ export default class dataFectcherCPE extends LightningElement {
     set genericTypeMappings(value) {
         this._typeMappings = value;
         this.initializeTypeMappings();
-    }
-
-    @api
-    validate() {
-        let validity = [];
-        for (let inputType of VALIDATEABLE_INPUTS) {
-            for (let input of this.template.querySelectorAll(inputType)) {
-                if (!input.reportValidity()) {
-                    validity.push({
-                        key: input.name || ('Error_' + validity.length),
-                        errorString: 'This field has an error (missing or invalid entry)',
-                    });
-                }
-            }
-        }
-        return validity;
     }   
 
 
     /* LIFECYCLE HOOKS */
-    connectedCallback() {
-
-    }
+   
+        
 
     renderedCallback() {
         if (!this.rendered) {
@@ -105,9 +77,7 @@ export default class dataFectcherCPE extends LightningElement {
     initializeValues(value) {
         if (this._values && this._values.length) {
             this._values.forEach(curInputParam => {
-                if (curInputParam.name && this.inputValues[curInputParam.name]) {
-                    console.log('in initializeValues: ' + curInputParam.name + ' = ' + curInputParam.value);
-                    // console.log('in initializeValues: '+ JSON.stringify(curInputParam));
+                if (curInputParam.name && this.inputValues[curInputParam.name]) {                    
                     if (this.inputValues[curInputParam.name].serialized) {
                         this.inputValues[curInputParam.name].value = JSON.parse(curInputParam.value);
                     } else {
@@ -121,7 +91,7 @@ export default class dataFectcherCPE extends LightningElement {
 
     initializeTypeMappings() {
         this._typeMappings.forEach((typeMapping) => {
-            // console.log(JSON.stringify(typeMapping));
+            
             if (typeMapping.name && typeMapping.value) {
                 this.typeValue = typeMapping.value;
             }
@@ -132,8 +102,7 @@ export default class dataFectcherCPE extends LightningElement {
 
     handleObjectChange(event) {
         if (event.target && event.detail) {
-            // console.log('handling a dynamic type mapping');
-            // console.log('event is ' + JSON.stringify(event));
+            
             let typeValue = event.detail.objectType;
             const typeName = 'T';
             const dynamicTypeMapping = new CustomEvent('configuration_editor_generic_type_mapping_changed', {
@@ -151,14 +120,12 @@ export default class dataFectcherCPE extends LightningElement {
                 this.dispatchFlowValueChangeEvent(event.currentTarget.name, typeValue, 'String');
             }
 
-            // this.dispatchFlowValueChangeEvent(event.currentTarget.name, event.detail.objectType, DATA_TYPE.STRING);
+            
         }
     }
 
     handleSecondObjectChange(event) {
         if (event.target && event.detail) {
-            // console.log('handling a dynamic type mapping');
-            // console.log('event is ' + JSON.stringify(event));
             let typeValue = event.detail.objectType;
             const typeName = 'S';
             const dynamicTypeMapping = new CustomEvent('configuration_editor_generic_type_mapping_changed', {
@@ -176,46 +143,20 @@ export default class dataFectcherCPE extends LightningElement {
                 this.dispatchFlowValueChangeEvent(event.currentTarget.name, typeValue, 'String');
             }
 
-            // this.dispatchFlowValueChangeEvent(event.currentTarget.name, event.detail.objectType, DATA_TYPE.STRING);
+            
         }
     }
 
     handleFlowComboboxValueChange(event) {
         if (event.target && event.detail) {
             this.dispatchFlowValueChangeEvent(event.target.name, event.detail.newValue, event.detail.newValueDataType);
-        }
+        };
     }
 
-    handleValueChange(event) {
-        if (event.detail && event.currentTarget.name) {
-            let dataType = DATA_TYPE.STRING;
-            if (event.currentTarget.type == 'checkbox') dataType = DATA_TYPE.BOOLEAN;
-            if (event.currentTarget.type == 'number') dataType = DATA_TYPE.NUMBER;
-            if (event.currentTarget.type == 'integer') dataType = DATA_TYPE.INTEGER;
-
-            let newValue = event.currentTarget.type === 'checkbox' ? event.currentTarget.checked : event.detail.value;
-            this.dispatchFlowValueChangeEvent(event.currentTarget.name, newValue, dataType);
-        }
-    }   
-
-    updateRecordVariablesComboboxOptions(objectType) {
-        const variables = this._flowVariables.filter(
-            (variable) => variable.objectType === objectType
-        );
-        let comboboxOptions = [];
-        variables.forEach((variable) => {
-            comboboxOptions.push({
-                label: variable.name,
-                value: "{!" + variable.name + "}"
-            });
-        });
-        return comboboxOptions;
-    }
 
     dispatchFlowValueChangeEvent(id, newValue, dataType = DATA_TYPE.STRING) {
-        //console.log('in dispatchFlowValueChangeEvent: ' + id, newValue, dataType);
+        console.log('in dispatchFlowValueChangeEvent: ' + id, newValue, dataType);
         if (this.inputValues[id] && this.inputValues[id].serialized) {
-            console.log('serializing value');
             newValue = JSON.stringify(newValue);
         }
         const valueChangedEvent = new CustomEvent(FLOW_EVENT_TYPE.CHANGE, {
@@ -229,23 +170,6 @@ export default class dataFectcherCPE extends LightningElement {
             }
         });
         this.dispatchEvent(valueChangedEvent);
-    }
-
-    /* UTILITY FUNCTIONS */
-    transformConstantObject(constant) {
-        return {
-            list: constant,
-            get options() { return Object.values(this.list); },
-            get default() { return this.options.find(option => option.default); },
-            findFromValue: function (value) {
-                let entry = this.options.find(option => option.value == value);
-                return entry || this.default;
-            },
-            findFromLabel: function (label) {
-                let entry = this.options.find(option => option.label == label);
-                return entry || this.default;
-            }
-        }
     }
 
     handleCheckboxChange(event) {
