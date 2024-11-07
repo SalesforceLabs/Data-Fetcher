@@ -1,10 +1,3 @@
-/**
- * @description       : 
- * @author            : Josh Dayment
- * @group             : 
- * @last modified on  : 02-16-2024
- * @last modified by  : Josh Dayment
-**/
 import { api, track, LightningElement } from "lwc";
 import getSObjects from "@salesforce/apex/DataFetcherController.getSObjects";
 import getAggregate from "@salesforce/apex/DataFetcherController.getAggregate";
@@ -23,16 +16,18 @@ export default class DataFetcher extends LightningElement {
   @api searchResults1 = [];
   @api objectName1 = 'Account';
   @api objectName2 = 'Account';
+  @api debounceTime;
   @track oldQuery;
   @track oldAggQuery;
   @track oldSearchQuery;
+  @track displayError;
 
 
   renderedCallback() {
     if (this.queryString && this.queryString != this.oldQuery) {
     this._getRecords();
   }
-    //console.log("Records are: " + JSON.stringify(this.retrievedRecords))
+
     if (this.aggQueryString && this.aggQueryString != this.oldAggQuery){
         this._getAggregate();
     }
@@ -43,11 +38,10 @@ export default class DataFetcher extends LightningElement {
 
   handleOnChange() {
     this._debounceGetRecords();
+    
   }
 
   _getRecords() {
-    
-    //console.log("Query String is " + this.queryString)
     
       getSObjects({ queryString: this.queryString })
         .then(({ results, firstResult }) => {
@@ -97,31 +91,37 @@ export default class DataFetcher extends LightningElement {
           this._fireFlowEvent("searchResults", this.searchResults);
           this._fireFlowEvent("searchResults1", this.searchResults1);
         })
-        //.catch(error => 
-          //{this.error = error?.body?.message ?? JSON.stringify(error);
-          //console.error(error.body.message);
-          //this._fireFlowEvent("error", this.error);});
-          //});
+        .catch(error => 
+          {this.error = error?.body?.message ?? JSON.stringify(error);
+          console.error(error.body.message);
+          this._fireFlowEvent("error", this.error);});
 
         this.oldSearchQuery = this.searchString;
     
   }
 
-  _debounceGetRecords() {
+  _debounceGetRecords() {    
     this._debounceTimer && clearTimeout(this._debounceTimer);
     if (this.queryString){
-    this._debounceTimer = setTimeout(() => this._getRecords(), 300);
+    this._debounceTimer = setTimeout(() => this._getRecords(), this.debounceTime);    
     }
     if (this.searchString){
-    this._debounceTimer = setTimeout(() => this._getSearchResults(), 300);
+    this._debounceTimer = setTimeout(() => this._getSearchResults(), this.debounceTime);
     }
     if (this.aggQueryString){
-      this._debounceTimer = setTimeout(() => this._getAggregate(), 300);
+      this._debounceTimer = setTimeout(() => this._getAggregate(), this.debounceTime);
       }
+    
   }  
 
   _fireFlowEvent(eventName, data) {
     this.dispatchEvent(new FlowAttributeChangeEvent(eventName, data));
+  }
+
+  get displayError() {
+    if (this.error && this.showErrorMessage){
+      this.displayError = true;
+    };
   }
 
 }
