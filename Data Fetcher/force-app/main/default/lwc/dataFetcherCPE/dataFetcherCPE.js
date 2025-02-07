@@ -12,7 +12,7 @@ const FLOW_EVENT_TYPE = {
     CHANGE: 'configuration_editor_input_value_changed'
 }
 
-export default class dataFectcherCPE extends LightningElement {
+export default class dataFetcherCPE extends LightningElement {
     @api automaticOutputVariables;
     typeValue;
     _builderContext = {};
