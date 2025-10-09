@@ -15,7 +15,7 @@ import {
     removeFormatting,
     flowComboboxDefaults
 } from 'c/dataFetcherCPEComboboxUtils';
-import Placeholder_Text from '@salesforce/label/c.joshdaymentlabs_Manual_Reference_Allowed';
+import Placeholder_Text from '@salesforce/label/c.datafetcher_Manual_Reference_Allowed';
 import getObjectFields from '@salesforce/apex/DataFetcherFieldSelectorController.getObjectFields';
 
 const OUTPUTS_FROM_LABEL = 'Outputs from '; 

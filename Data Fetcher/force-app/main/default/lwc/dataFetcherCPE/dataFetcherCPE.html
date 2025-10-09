@@ -1,34 +1,83 @@
+<!--
+  @description       : 
+  @author            : Josh Dayment
+  @group             : 
+  @last modified on  : 01-02-2024
+  @last modified by  : Josh Dayment
+-->
 <template>
+  <lightning-input type="checkbox" label="Use Wire Service (getListRecordsByName)" name="useWireService" onchange={handleUseWireServiceChange}
+    field-level-help="When checked, uses wire service instead of SOQL queries" checked={inputValues.useWireService.value}></lightning-input>
+  
   <lightning-input type="checkbox" label="Show SOSL Configuration" name="showSOSL" onchange={handleCheckboxChange}
-    field-level-help="When checked SOSL configuration options will show" checked></lightning-input>
+    field-level-help="When checked SOSL configuration options will show" checked={isChecked}></lightning-input>
+  
   <c-data-fetcher-object-picker object-label={inputValues.objectName1.label} name="objectName1"
     object-type={inputValues.objectName1.value} available-object-types="All" hide-field-picklist=true
     onfieldselected={handleObjectChange} required>
   </c-data-fetcher-object-picker>
-  <template lwc:if={isChecked}>
-    <c-data-fetcher-object-picker object-label={inputValues.objectName2.label} name="objectName2"
-      object-type={inputValues.objectName2.value} available-object-types="All" hide-field-picklist=true
-      onfieldselected={handleSecondObjectChange}
-      field-level-help="This is optional when using SOSL to return a second set of records from a different object">
-    </c-data-fetcher-object-picker>
+  <!-- Wire Service Configuration -->
+  <template lwc:if={inputValues.useWireService.value}>
+    <c-data-fetcher-c-p-e-combobox name="listViewApiName" value={inputValues.listViewApiName.value}
+      label={inputValues.listViewApiName.label} builder-context={_builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      onvaluechanged={handleFlowComboboxValueChange}
+      field-level-help="API name of the list view (e.g. 'AllAccounts', 'MyOpenOpportunities')"></c-data-fetcher-c-p-e-combobox>
+    
+    <c-data-fetcher-c-p-e-combobox name="fields" value={inputValues.fields.value}
+      label={inputValues.fields.label} builder-context={_builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      onvaluechanged={handleFlowComboboxValueChange}
+      field-level-help="Comma-separated field API names to retrieve (e.g. 'Id,Name,Email')"></c-data-fetcher-c-p-e-combobox>
+    
+    <lightning-input type="number" name="pageSize" label="Page Size (Max 2000)" 
+      value={inputValues.pageSize.value} onchange={handleInputChange}
+      field-level-help="Number of records to retrieve (maximum 2000)"></lightning-input>
+    
+    <c-data-fetcher-c-p-e-combobox name="sortBy" value={inputValues.sortBy.value}
+      label={inputValues.sortBy.label} builder-context={_builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      onvaluechanged={handleFlowComboboxValueChange}
+      field-level-help="Field API name to sort by (optional)"></c-data-fetcher-c-p-e-combobox>
+    
+    <c-data-fetcher-c-p-e-combobox name="pageToken" value={inputValues.pageToken.value}
+      label={inputValues.pageToken.label} builder-context={_builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      onvaluechanged={handleFlowComboboxValueChange}
+      field-level-help="Page token for pagination (optional)"></c-data-fetcher-c-p-e-combobox>
   </template>
-  <c-data-fetcher-c-p-e-combobox name="queryString" value={inputValues.queryString.value}
-    label={inputValues.queryString.label} builder-context={_builderContext}
-    automatic-output-variables={automaticOutputVariables}
-    onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
-  <template lwc:if={isChecked}>
-    <c-data-fetcher-c-p-e-combobox name="searchString" value={inputValues.searchString.value}
-      label={inputValues.searchString.label} builder-context={_builderContext}
+
+  <!-- SOQL/SOSL Configuration (hidden when wire service is enabled) -->
+  <template lwc:if={hideSOQLInputs}>
+    <template lwc:if={isChecked}>
+      <c-data-fetcher-object-picker object-label={inputValues.objectName2.label} name="objectName2"
+        object-type={inputValues.objectName2.value} available-object-types="All" hide-field-picklist=true
+        onfieldselected={handleSecondObjectChange}
+        field-level-help="This is optional when using SOSL to return a second set of records from a different object">
+      </c-data-fetcher-object-picker>
+    </template>
+    
+    <c-data-fetcher-c-p-e-combobox name="queryString" value={inputValues.queryString.value}
+      label={inputValues.queryString.label} builder-context={_builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
+    
+    <template lwc:if={isChecked}>
+      <c-data-fetcher-c-p-e-combobox name="searchString" value={inputValues.searchString.value}
+        label={inputValues.searchString.label} builder-context={_builderContext}
+        automatic-output-variables={automaticOutputVariables}
+        onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
+    </template>
+    
+    <c-data-fetcher-c-p-e-combobox name="aggQueryString" value={inputValues.aggQueryString.value}
+      label={inputValues.aggQueryString.label} builder-context={_builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
+    
+    <c-data-fetcher-c-p-e-combobox name="debounceTime" value={inputValues.debounceTime.value}
+      label={inputValues.debounceTime.label} builder-context={_builderContext}
       automatic-output-variables={automaticOutputVariables}
       onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
   </template>
-  <c-data-fetcher-c-p-e-combobox name="aggQueryString" value={inputValues.aggQueryString.value}
-    label={inputValues.aggQueryString.label} builder-context={_builderContext}
-    automatic-output-variables={automaticOutputVariables}
-    onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
-  <c-data-fetcher-c-p-e-combobox name="debounceTime" value={inputValues.debounceTime.value}
-    label={inputValues.debounceTime.label} builder-context={_builderContext}
-    automatic-output-variables={automaticOutputVariables}
-    onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
 
 </template>

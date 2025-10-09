@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>62.0</apiVersion>
+    <apiVersion>64.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Data Fetcher</masterLabel>
     <targets>
         <target>lightning__FlowScreen</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__FlowScreen" configurationEditor="joshdaymentlabs-data-fetcher-c-p-e">
+        <targetConfig targets="lightning__FlowScreen" configurationEditor="c-data-fetcher-c-p-e">
             <propertyType name="T" extends="SObject"  label="Object API Name" description="Select the API Name of the SObject to Query"/>
             <propertyType name="S" extends="SObject"  label="Second Object API Name" description="Select a Second Object for SOSL Query"/>
             <property name="queryString" label="SOQL Query" type="String" />
@@ -21,7 +21,7 @@
             <property name="searchResults1" type="{S[]}" role="outputOnly"/>
             <property name="objectName1" type="String" default="Account"/>
             <property name="objectName2" type="String" default="Account"/>
-            <property name="debounceTime" type="String" default="300"/>
+            <property name="debounceTime" type="String" default="300"/>           
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>

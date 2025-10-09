@@ -1,3 +1,10 @@
+/**
+ * @description       : 
+ * @author            : Josh Dayment
+ * @group             : 
+ * @last modified on  : 12-20-2023
+ * @last modified by  : Josh Dayment
+**/
 import { api, track, LightningElement } from "lwc";
 import getSObjects from "@salesforce/apex/DataFetcherController.getSObjects";
 import getAggregate from "@salesforce/apex/DataFetcherController.getAggregate";
@@ -17,6 +24,13 @@ export default class DataFetcher extends LightningElement {
   @api objectName1 = 'Account';
   @api objectName2 = 'Account';
   @api debounceTime;
+  // Deprecated wire service properties - kept for backward compatibility only
+  @api useWireService = false;
+  @api listViewApiName;
+  @api pageToken;
+  @api pageSize = 50;
+  @api sortBy;
+  @api fields;
   @track oldQuery;
   @track oldAggQuery;
   @track oldSearchQuery;
@@ -24,13 +38,15 @@ export default class DataFetcher extends LightningElement {
 
 
   renderedCallback() {
+    // Execute SOQL methods when parameters change
     if (this.queryString && this.queryString != this.oldQuery) {
-    this._getRecords();
-  }
+      this._getRecords();
+    }
 
     if (this.aggQueryString && this.aggQueryString != this.oldAggQuery){
-        this._getAggregate();
+      this._getAggregate();
     }
+    
     if (this.searchString && this.searchString != this.oldSearchQuery) {
       this._getSearchResults();
     }

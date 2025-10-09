@@ -29,7 +29,12 @@ export default class dataFetcherCPE extends LightningElement {
         searchString: { value: null, valueDataType: null, isCollection: false, label: 'SOSL Query String' },
         aggQueryString: { value: null, valueDataType: null, isCollection: false, label: 'Aggregate Query String' },
         debounceTime: {value: '300', valueDataType: null, isCollection: false, label: 'Debounce Time'},
-        
+        useWireService: { value: false, valueDataType: null, isCollection: false, label: 'Use Wire Service' },
+        listViewApiName: { value: null, valueDataType: null, isCollection: false, label: 'List View API Name' },
+        fields: { value: null, valueDataType: null, isCollection: false, label: 'Fields (comma-separated)' },
+        pageSize: { value: 50, valueDataType: null, isCollection: false, label: 'Page Size' },
+        sortBy: { value: null, valueDataType: null, isCollection: false, label: 'Sort By Field' },
+        pageToken: { value: null, valueDataType: null, isCollection: false, label: 'Page Token' },
     };
 
     @api get builderContext() {
@@ -55,8 +60,12 @@ export default class dataFetcherCPE extends LightningElement {
     set genericTypeMappings(value) {
         this._typeMappings = value;
         this.initializeTypeMappings();
-    }   
+    }
 
+    // Computed property to hide SOQL inputs when wire service is enabled
+    get hideSOQLInputs() {
+        return !this.inputValues.useWireService.value;
+    }
 
     /* LIFECYCLE HOOKS */
    
@@ -174,6 +183,24 @@ export default class dataFetcherCPE extends LightningElement {
 
     handleCheckboxChange(event) {
         this.isChecked = event.target.checked;
-      }
+    }
+
+    handleUseWireServiceChange(event) {
+        this.inputValues.useWireService.value = event.target.checked;
+        this.dispatchFlowValueChangeEvent('useWireService', event.target.checked, 'Boolean');
+    }
+
+    handleInputChange(event) {
+        const fieldName = event.target.name;
+        const value = event.target.value;
+        if (this.inputValues[fieldName]) {
+            this.inputValues[fieldName].value = value;
+            let dataType = 'String';
+            if (fieldName === 'pageSize') {
+                dataType = 'Integer';
+            }
+            this.dispatchFlowValueChangeEvent(fieldName, value, dataType);
+        }
+    }
 
 }

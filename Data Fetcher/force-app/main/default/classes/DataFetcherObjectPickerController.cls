@@ -60,6 +60,28 @@ public with sharing class DataFetcherObjectPickerController {
         return options;
     }
 
+    @AuraEnabled(cacheable=true)
+    public static List<Member> getListViews(String objectApiName) {
+        List<Member> listViews = new List<Member>();
+        
+        try {
+            List<ListView> views = [SELECT Id, Name, DeveloperName, SobjectType 
+                                   FROM ListView 
+                                   WHERE SobjectType = :objectApiName 
+                                   AND IsSoqlCompatible = true];
+            
+            for (ListView view : views) {
+                listViews.add(new Member(view.DeveloperName, view.Name));
+            }
+            
+            listViews.sort();
+        } catch (Exception e) {
+            System.debug('Error fetching list views: ' + e.getMessage());
+        }
+        
+        return listViews;
+    }
+
     @JsonAccess(serializable='always' deserializable='always')
     public class Member implements Comparable {
 
