@@ -1,0 +1,25 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true,
+      "package": "Data Fetcher",
+      "versionName": "ver 3.2 - Object Picker Fix",
+      "versionNumber": "3.2.0.NEXT",
+      "ancestorVersion": "3.1.0.1"
+    }
+  ],
+  "name": "Data Fetcher Salesforce Labs",
+  "namespace": "joshdaymentlabs",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "67.0",
+  "packageAliases": {
+    "Data Fetcher": "0HoDm000000fxTYKAY",
+    "Data Fetcher@0.2.0-1": "04tDm000000518kIAA",
+    "Data Fetcher@0.3.0-1-feature/list-view-wire-service": "04tg7000000GnmLAAS",
+    "Data Fetcher@3.0.0-1-feature/list-view-wire-service": "04tg7000000GnnxAAC",
+    "Data Fetcher@3.0.0-2-feature/list-view-wire-service": "04tg7000000GnrBAAS",
+    "Data Fetcher@3.1.0-1": "04tg7000000HGhtAAG",
+    "Data Fetcher@3.2.0-1": "04tg7000000HLcjAAG"
+  }
+}
