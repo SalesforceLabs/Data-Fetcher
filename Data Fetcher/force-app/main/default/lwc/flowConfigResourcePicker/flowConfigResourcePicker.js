@@ -1097,6 +1097,7 @@ export default class FlowConfigResourcePicker extends LightningElement {
       resources: resources.map((resource) =>
         this.decorateOption(resource, optionIndex++, {
           browseFields:
+            resource.browseFields ||
             resource.isListContainer ||
             (this.allowRecordFields &&
               resource.dataType === "SObject" &&

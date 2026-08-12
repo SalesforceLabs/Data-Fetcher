@@ -418,6 +418,18 @@ describe("c-flow-config-resource-picker", () => {
         'button[data-key="global-label"] lightning-icon'
       ).iconName
     ).toBe("utility:world");
+    const globalContainers = [
+      ...element.shadowRoot.querySelectorAll('button[data-key^="global-"]')
+    ];
+    expect(globalContainers.length).toBeGreaterThan(0);
+    globalContainers.forEach((container) => {
+      expect(container.querySelector(".result__chevron")).not.toBeNull();
+    });
+    expect(
+      element.shadowRoot.querySelector(
+        'button[data-key="$GlobalConstant.True"] .result__chevron'
+      )
+    ).toBeNull();
 
     element.shadowRoot.querySelector('button[data-key="global-label"]').click();
     await flushPromises();
