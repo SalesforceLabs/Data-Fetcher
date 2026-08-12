@@ -1,83 +1,208 @@
-<!--
-  @description       : 
-  @author            : Josh Dayment
-  @group             : 
-  @last modified on  : 01-02-2024
-  @last modified by  : Josh Dayment
--->
 <template>
-  <lightning-input type="checkbox" label="Use Wire Service (getListRecordsByName)" name="useWireService" onchange={handleUseWireServiceChange}
-    field-level-help="When checked, uses wire service instead of SOQL queries" checked={inputValues.useWireService.value}></lightning-input>
-  
-  <lightning-input type="checkbox" label="Show SOSL Configuration" name="showSOSL" onchange={handleCheckboxChange}
-    field-level-help="When checked SOSL configuration options will show" checked={isChecked}></lightning-input>
-  
-  <c-data-fetcher-object-picker object-label={inputValues.objectName1.label} name="objectName1"
-    object-type={inputValues.objectName1.value} available-object-types="All" hide-field-picklist=true
-    onfieldselected={handleObjectChange} required>
-  </c-data-fetcher-object-picker>
-  <!-- Wire Service Configuration -->
-  <template lwc:if={inputValues.useWireService.value}>
-    <c-data-fetcher-c-p-e-combobox name="listViewApiName" value={inputValues.listViewApiName.value}
-      label={inputValues.listViewApiName.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}
-      field-level-help="API name of the list view (e.g. 'AllAccounts', 'MyOpenOpportunities')"></c-data-fetcher-c-p-e-combobox>
-    
-    <c-data-fetcher-c-p-e-combobox name="fields" value={inputValues.fields.value}
-      label={inputValues.fields.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}
-      field-level-help="Comma-separated field API names to retrieve (e.g. 'Id,Name,Email')"></c-data-fetcher-c-p-e-combobox>
-    
-    <lightning-input type="number" name="pageSize" label="Page Size (Max 2000)" 
-      value={inputValues.pageSize.value} onchange={handleInputChange}
-      field-level-help="Number of records to retrieve (maximum 2000)"></lightning-input>
-    
-    <c-data-fetcher-c-p-e-combobox name="sortBy" value={inputValues.sortBy.value}
-      label={inputValues.sortBy.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}
-      field-level-help="Field API name to sort by (optional)"></c-data-fetcher-c-p-e-combobox>
-    
-    <c-data-fetcher-c-p-e-combobox name="pageToken" value={inputValues.pageToken.value}
-      label={inputValues.pageToken.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}
-      field-level-help="Page token for pagination (optional)"></c-data-fetcher-c-p-e-combobox>
+  <template lwc:if={hasValidationErrors}>
+    <section
+      class="slds-notify slds-notify_alert slds-theme_error"
+      role="alert"
+    >
+      <span class="slds-assistive-text">Error</span>
+      <div>
+        <p>Fix the following:</p>
+        <ul class="slds-list_dotted slds-m-left_medium">
+          <template for:each={validationErrors} for:item="error">
+            <li key={error.key}>{error.errorString}</li>
+          </template>
+        </ul>
+      </div>
+    </section>
   </template>
 
-  <!-- SOQL/SOSL Configuration (hidden when wire service is enabled) -->
+  <lightning-input
+    type="checkbox"
+    label="Use Wire Service (getListRecordsByName)"
+    name="useWireService"
+    checked={useWireService}
+    field-level-help="When checked, uses the UI API wire service instead of SOQL queries."
+    onchange={handleUseWireServiceChange}
+  ></lightning-input>
+
+  <lightning-input
+    type="checkbox"
+    label="Show SOSL Configuration"
+    name="showSOSL"
+    checked={showSOSL}
+    field-level-help="When checked, SOSL configuration options are shown."
+    onchange={handleShowSOSLChange}
+  ></lightning-input>
+
+  <c-flow-config-object-picker
+    data-validatable
+    data-property="objectName1"
+    property-name="objectName1"
+    label="Object Name"
+    value={objectName1}
+    available-object-types="All"
+    queryable-only
+    required
+    field-level-help="Choose the Salesforce object Data Fetcher should query."
+    onobjectchange={handlePrimaryObjectChange}
+  ></c-flow-config-object-picker>
+
+  <template lwc:if={useWireService}>
+    <c-flow-config-value-input
+      data-validatable
+      data-property="listViewApiName"
+      label="List View API Name"
+      property-name="listViewApiName"
+      value={listViewApiName}
+      value-data-type={listViewApiNameDataType}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      required
+      field-level-help="API name of the list view, for example AllAccounts."
+      onvaluechange={handleValueChange}
+    ></c-flow-config-value-input>
+
+    <c-flow-config-field-input
+      data-validatable
+      data-property="fields"
+      label="Additional Fields (optional)"
+      property-name="fields"
+      value={fields}
+      value-data-type={fieldsDataType}
+      object-api-name={objectName1}
+      multiple
+      sortable={additionalFieldsSortable}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      allow-custom
+      custom-mode={fieldsIsCustom}
+      field-level-help="Select fields from Object Name, or use a Flow value containing a comma-separated list of field API names."
+      onvaluechange={handleFieldValueChange}
+      onmodechange={handleFieldsModeChange}
+    ></c-flow-config-field-input>
+
+    <c-flow-config-value-input
+      data-validatable
+      data-property="pageSize"
+      label="Page Size"
+      property-name="pageSize"
+      value={pageSize}
+      value-data-type={pageSizeDataType}
+      value-type="Number"
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      required
+      field-level-help="Number of records to retrieve, from 1 through 2000."
+      onvaluechange={handleValueChange}
+    ></c-flow-config-value-input>
+
+    <c-flow-config-field-input
+      data-validatable
+      data-property="sortBy"
+      label="Sort By Field"
+      property-name="sortBy"
+      value={sortBy}
+      value-data-type={sortByDataType}
+      object-api-name={objectName1}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      allow-custom
+      custom-mode={sortByIsCustom}
+      field-level-help="Choose a field from Object Name, or switch to a custom literal or Flow resource."
+      onvaluechange={handleFieldValueChange}
+      onmodechange={handleSortByModeChange}
+    ></c-flow-config-field-input>
+
+    <c-flow-config-value-input
+      data-validatable
+      data-property="pageToken"
+      label="Page Token"
+      property-name="pageToken"
+      value={pageToken}
+      value-data-type={pageTokenDataType}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      field-level-help="Optional page token for pagination."
+      onvaluechange={handleValueChange}
+    ></c-flow-config-value-input>
+  </template>
+
   <template lwc:if={hideSOQLInputs}>
-    <template lwc:if={isChecked}>
-      <c-data-fetcher-object-picker object-label={inputValues.objectName2.label} name="objectName2"
-        object-type={inputValues.objectName2.value} available-object-types="All" hide-field-picklist=true
-        onfieldselected={handleSecondObjectChange}
-        field-level-help="This is optional when using SOSL to return a second set of records from a different object">
-      </c-data-fetcher-object-picker>
+    <template lwc:if={showSOSL}>
+      <c-flow-config-object-picker
+        data-validatable
+        data-property="objectName2"
+        property-name="objectName2"
+        label="Second Object Name"
+        value={objectName2}
+        available-object-types="All"
+        queryable-only
+        field-level-help="Optional second object returned by the SOSL query."
+        onobjectchange={handleSecondaryObjectChange}
+      ></c-flow-config-object-picker>
     </template>
-    
-    <c-data-fetcher-c-p-e-combobox name="queryString" value={inputValues.queryString.value}
-      label={inputValues.queryString.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
-    
-    <template lwc:if={isChecked}>
-      <c-data-fetcher-c-p-e-combobox name="searchString" value={inputValues.searchString.value}
-        label={inputValues.searchString.label} builder-context={_builderContext}
-        automatic-output-variables={automaticOutputVariables}
-        onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
-    </template>
-    
-    <c-data-fetcher-c-p-e-combobox name="aggQueryString" value={inputValues.aggQueryString.value}
-      label={inputValues.aggQueryString.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
-    
-    <c-data-fetcher-c-p-e-combobox name="debounceTime" value={inputValues.debounceTime.value}
-      label={inputValues.debounceTime.label} builder-context={_builderContext}
-      automatic-output-variables={automaticOutputVariables}
-      onvaluechanged={handleFlowComboboxValueChange}></c-data-fetcher-c-p-e-combobox>
-  </template>
 
+    <c-flow-config-value-input
+      data-validatable
+      data-property="queryString"
+      label="SOQL Query String"
+      property-name="queryString"
+      value={queryString}
+      value-data-type={queryStringDataType}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      field-level-help="SOQL query text or a compatible Flow resource."
+      onvaluechange={handleValueChange}
+    ></c-flow-config-value-input>
+
+    <template lwc:if={showSOSL}>
+      <c-flow-config-value-input
+        data-validatable
+        data-property="searchString"
+        label="SOSL Query String"
+        property-name="searchString"
+        value={searchString}
+        value-data-type={searchStringDataType}
+        builder-context={builderContext}
+        automatic-output-variables={automaticOutputVariables}
+        api-version={apiVersion}
+        field-level-help="SOSL query text or a compatible Flow resource."
+        onvaluechange={handleValueChange}
+      ></c-flow-config-value-input>
+    </template>
+
+    <c-flow-config-value-input
+      data-validatable
+      data-property="aggQueryString"
+      label="Aggregate Query String"
+      property-name="aggQueryString"
+      value={aggQueryString}
+      value-data-type={aggQueryStringDataType}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      field-level-help="Aggregate SOQL query text or a compatible Flow resource."
+      onvaluechange={handleValueChange}
+    ></c-flow-config-value-input>
+
+    <c-flow-config-value-input
+      data-validatable
+      data-property="debounceTime"
+      label="Debounce Time"
+      property-name="debounceTime"
+      value={debounceTime}
+      value-data-type={debounceTimeDataType}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      field-level-help="Delay in milliseconds before reactive queries run."
+      onvaluechange={handleValueChange}
+    ></c-flow-config-value-input>
+  </template>
 </template>

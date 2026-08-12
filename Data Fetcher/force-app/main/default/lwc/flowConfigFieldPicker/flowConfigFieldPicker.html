@@ -1,0 +1,304 @@
+<template>
+  <div class="picker" onfocusout={handleFocusOut}>
+    <div class="picker__label">
+      <template lwc:if={required}><abbr title="required">*</abbr></template>
+      <span>{label}</span>
+      <template lwc:if={hasHelpText}>
+        <lightning-helptext content={fieldLevelHelp}></lightning-helptext>
+      </template>
+    </div>
+
+    <template lwc:if={showSelectedState}>
+      <div
+        class="selection"
+        role="combobox"
+        aria-expanded={isOpen}
+        tabindex="0"
+        onmousedown={handleSelectionMouseDown}
+        onclick={handleEdit}
+        onkeydown={handleSelectionKeydown}
+      >
+        <div class="selection__pill" title={selectedTitle}>
+          <lightning-icon
+            class="selection__icon"
+            icon-name={selectedIconName}
+            size="x-small"
+            alternative-text=""
+          ></lightning-icon>
+          <span class="selection__primary">
+            <span class="selection__summary">{selectedPrimary}</span>
+            <template lwc:if={selectedMeta}>
+              <span class="selection__separator" aria-hidden="true">·</span>
+              <span class="selection__meta">{selectedMeta}</span>
+            </template>
+          </span>
+          <button
+            class="selection__clear"
+            type="button"
+            title={removeLabel}
+            aria-label={removeLabel}
+            onclick={handleClear}
+          >
+            <lightning-icon
+              icon-name="utility:close"
+              size="xx-small"
+              alternative-text=""
+            ></lightning-icon>
+          </button>
+        </div>
+      </div>
+    </template>
+    <template lwc:else>
+      <lightning-input
+        type="search"
+        variant="label-hidden"
+        label={label}
+        value={query}
+        placeholder={effectivePlaceholder}
+        required={required}
+        disabled={isDisabled}
+        onfocus={handleFocus}
+        oninput={handleSearch}
+        onchange={handleSearch}
+        onkeydown={handleKeydown}
+      ></lightning-input>
+    </template>
+    <template lwc:if={showSelectedValidationMessage}>
+      <p class="picker__error" role="alert">{validationMessage}</p>
+    </template>
+
+    <template lwc:if={isOpen}>
+      <section
+        class="results"
+        style={popoverStyle}
+        aria-label="Matching object fields"
+        onmousedown={handleResultsMouseDown}
+        onclick={handleResultsClick}
+      >
+        <c-flow-config-picker-header
+          class="results__header"
+          items={breadcrumbItems}
+          location-label="Field location"
+          close-label="Close results"
+          mode-toggle-label={effectiveModeToggleLabel}
+          mode-toggle-checked={modeToggleChecked}
+          onnavigate={handleBreadcrumb}
+          onclose={handleClose}
+        ></c-flow-config-picker-header>
+        <template lwc:if={showSelectedFields}>
+          <section class="selected-fields" aria-label="Selected fields">
+            <div class="selected-fields__heading">
+              <span>Selected fields</span>
+              <span class="selected-fields__actions">
+                <template lwc:if={showOrderingControls}>
+                  <span class="selected-fields__hint">Drag or use arrows</span>
+                </template>
+                <button
+                  class="selected-fields__clear"
+                  type="button"
+                  title="Clear all selected fields"
+                  aria-label="Clear all selected fields"
+                  onclick={handleClearAll}
+                >
+                  <lightning-icon
+                    icon-name="utility:close"
+                    size="xx-small"
+                    alternative-text=""
+                  ></lightning-icon>
+                </button>
+              </span>
+            </div>
+            <ol class="selected-fields__list">
+              <template for:each={orderedFields} for:item="field">
+                <li
+                  key={field.id}
+                  class={field.orderClass}
+                  data-index={field.index}
+                  ondragover={handleOrderDragOver}
+                  ondrop={handleOrderDrop}
+                >
+                  <template lwc:if={showOrderingControls}>
+                    <button
+                      class={field.dragClass}
+                      type="button"
+                      draggable={field.isDraggable}
+                      aria-label={field.dragLabel}
+                      title={field.dragLabel}
+                      data-index={field.index}
+                      ondragstart={handleOrderDragStart}
+                      ondragend={handleOrderDragEnd}
+                      onkeydown={handleDragHandleKeydown}
+                    >
+                      <lightning-icon
+                        icon-name="utility:drag_and_drop"
+                        size="xx-small"
+                        alternative-text=""
+                      ></lightning-icon>
+                    </button>
+                    <span class="selected-field__position"
+                      >{field.position}</span
+                    >
+                  </template>
+                  <lightning-icon
+                    class="selected-field__icon"
+                    icon-name={field.iconName}
+                    size="xx-small"
+                    alternative-text=""
+                  ></lightning-icon>
+                  <span class="selected-field__text" title={field.title}>
+                    <span class="selected-field__label">{field.label}</span>
+                    <span class="selected-field__api">{field.apiName}</span>
+                  </span>
+                  <span class="selected-field__actions">
+                    <template lwc:if={showOrderingControls}>
+                      <button
+                        class="order-action"
+                        type="button"
+                        title="Move field up"
+                        aria-label={field.moveUpLabel}
+                        data-index={field.index}
+                        disabled={field.isFirst}
+                        onclick={handleMoveUp}
+                      >
+                        <lightning-icon
+                          icon-name="utility:chevronup"
+                          size="xx-small"
+                          alternative-text=""
+                        ></lightning-icon>
+                      </button>
+                      <button
+                        class="order-action"
+                        type="button"
+                        title="Move field down"
+                        aria-label={field.moveDownLabel}
+                        data-index={field.index}
+                        disabled={field.isLast}
+                        onclick={handleMoveDown}
+                      >
+                        <lightning-icon
+                          icon-name="utility:chevrondown"
+                          size="xx-small"
+                          alternative-text=""
+                        ></lightning-icon>
+                      </button>
+                    </template>
+                    <button
+                      class="order-action order-action--remove"
+                      type="button"
+                      title="Remove field"
+                      aria-label={field.removeLabel}
+                      data-api-name={field.path}
+                      onclick={handleOrderedRemove}
+                    >
+                      <lightning-icon
+                        icon-name="utility:close"
+                        size="xx-small"
+                        alternative-text=""
+                      ></lightning-icon>
+                    </button>
+                  </span>
+                </li>
+              </template>
+            </ol>
+            <template lwc:if={showOrderingControls}>
+              <span class="slds-assistive-text" aria-live="polite"
+                >{reorderAnnouncement}</span
+              >
+            </template>
+          </section>
+        </template>
+        <div class="results__scroll" onscroll={handleResultsScroll}>
+          <template lwc:if={showResultsLoading}>
+            <p class="results__empty" role="status">Loading fields…</p>
+          </template>
+          <template lwc:if={hasRelationships}>
+            <section class="field-group">
+              <h3 class="field-group__title">Relationship Fields</h3>
+              <ul class="results__list" role="listbox">
+                <template for:each={relationshipFields} for:item="field">
+                  <li key={field.id} role="presentation">
+                    <button
+                      class={field.optionClass}
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      data-key={field.key}
+                      data-path={field.path}
+                      onclick={handleBrowseRelationship}
+                    >
+                      <lightning-icon
+                        class="result__icon"
+                        icon-name={field.iconName}
+                        size="x-small"
+                        alternative-text=""
+                      ></lightning-icon>
+                      <span class="result__text">
+                        <span class="result__label">{field.label}</span>
+                        <span class="result__meta">{field.meta}</span>
+                      </span>
+                      <lightning-icon
+                        class="result__chevron"
+                        icon-name="utility:chevronright"
+                        size="xx-small"
+                        alternative-text="Open relationship fields"
+                      ></lightning-icon>
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </section>
+          </template>
+          <template lwc:if={hasResults}>
+            <section class="field-group">
+              <h3 class="field-group__title">Fields</h3>
+              <ul class="results__list" role="listbox">
+                <template for:each={filteredFields} for:item="field">
+                  <li key={field.id} role="presentation">
+                    <button
+                      class={field.optionClass}
+                      type="button"
+                      role="option"
+                      aria-selected={field.isSelected}
+                      data-api-name={field.path}
+                      onclick={handleSelect}
+                    >
+                      <lightning-icon
+                        class="result__icon"
+                        icon-name={field.iconName}
+                        size="x-small"
+                        alternative-text=""
+                      ></lightning-icon>
+                      <span class="result__text">
+                        <span class="result__label">{field.label}</span>
+                        <span class="result__meta"
+                          >{field.apiName} · {field.dataType}</span
+                        >
+                      </span>
+                      <span class="result__check">
+                        <template lwc:if={field.isSelected}>
+                          <lightning-icon
+                            icon-name="utility:check"
+                            size="xx-small"
+                            alternative-text="Selected"
+                          ></lightning-icon>
+                        </template>
+                      </span>
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </section>
+          </template>
+          <template lwc:if={showNoResults}>
+            <p class="results__empty">{noResultsMessage}</p>
+          </template>
+          <template lwc:if={showRemoveAction}>
+            <button class="remove" type="button" onclick={handleClear}>
+              {removeLabel}
+            </button>
+          </template>
+        </div>
+      </section>
+    </template>
+  </div>
+</template>

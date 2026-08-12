@@ -1,0 +1,11 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* A dependent field reads as belonging to the resource above it. */
+.form__dependent {
+  padding-left: 0.75rem;
+  border-left: 1px solid #e5e5e5;
+}

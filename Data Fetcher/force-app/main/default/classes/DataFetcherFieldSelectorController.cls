@@ -2,7 +2,7 @@
  * @name: DataFetcherFieldSelectorController
  * @description: This class provides a method to fetch fields for a given object name. It returns a list of Field objects, representing the fields of the specified object.
  * @author: Josh Dayment
- * @last modified on: 1-14-2025
+ * @last modified on: 8-3-2026
  * @last modified by: Josh Dayment
  */
 public with sharing class DataFetcherFieldSelectorController {

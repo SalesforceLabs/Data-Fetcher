@@ -1,0 +1,130 @@
+<template>
+  <div class="picker" onfocusout={handleFocusOut}>
+    <div class="picker__label">
+      <template lwc:if={required}><abbr title="required">*</abbr></template>
+      <span>{label}</span>
+      <template lwc:if={hasHelpText}>
+        <lightning-helptext content={fieldLevelHelp}></lightning-helptext>
+      </template>
+    </div>
+
+    <template lwc:if={showSelectedState}>
+      <div
+        class="selection"
+        role="combobox"
+        aria-expanded={isOpen}
+        tabindex="0"
+        onclick={handleEdit}
+        onkeydown={handleSelectionKeydown}
+      >
+        <div class="selection__pill" title={value}>
+          <lightning-icon
+            class="selection__icon"
+            icon-name="standard:record"
+            size="x-small"
+            alternative-text=""
+          ></lightning-icon>
+          <span class="selection__text" title={value}>
+            <span class="selection__label">{selectedLabel}</span>
+            <template lwc:if={selectedMeta}>
+              <span class="selection__separator" aria-hidden="true">·</span>
+              <span class="selection__meta">{selectedMeta}</span>
+            </template>
+          </span>
+          <button
+            class="selection__clear"
+            type="button"
+            title="Clear selected object"
+            aria-label="Clear selected object"
+            onclick={handleClear}
+          >
+            <lightning-icon
+              icon-name="utility:close"
+              size="xx-small"
+              alternative-text=""
+            ></lightning-icon>
+          </button>
+        </div>
+      </div>
+    </template>
+    <template lwc:else>
+      <lightning-input
+        type="search"
+        variant="label-hidden"
+        label={label}
+        value={query}
+        placeholder={placeholder}
+        required={required}
+        onfocus={handleFocus}
+        oninput={handleSearch}
+        onchange={handleSearch}
+        onkeydown={handleKeydown}
+      ></lightning-input>
+    </template>
+    <template lwc:if={showSelectedValidationMessage}>
+      <p class="picker__error" role="alert">{validationMessage}</p>
+    </template>
+
+    <template lwc:if={showResults}>
+      <section
+        class="results"
+        style={popoverStyle}
+        aria-label="Salesforce objects"
+        onmousedown={handleResultsMouseDown}
+        onclick={handleResultsClick}
+      >
+        <c-flow-config-picker-header
+          class="results__header"
+          items={breadcrumbItems}
+          location-label="Object location"
+          close-label="Close objects"
+          mode-toggle-label="Show all objects"
+          mode-toggle-checked={showAll}
+          onmodetoggle={handleShowAllToggle}
+          onclose={handleClose}
+        ></c-flow-config-picker-header>
+
+        <div class="results__scroll" onscroll={handleResultsScroll}>
+          <template lwc:if={showResultsLoading}>
+            <p class="results__empty" role="status">Loading objects…</p>
+          </template>
+          <template lwc:elseif={hasResults}>
+            <template for:each={objectGroups} for:item="group">
+              <section class="object-group" key={group.key}>
+                <h3 class="object-group__title">{group.label}</h3>
+                <ul class="results__list" role="listbox">
+                  <template for:each={group.objects} for:item="object">
+                    <li key={object.key} role="presentation">
+                      <button
+                        class={object.optionClass}
+                        type="button"
+                        role="option"
+                        aria-selected={object.isSelected}
+                        data-api-name={object.apiName}
+                        onclick={handleSelect}
+                      >
+                        <lightning-icon
+                          class="result__icon"
+                          icon-name={object.iconName}
+                          size="x-small"
+                          alternative-text=""
+                        ></lightning-icon>
+                        <span class="result__body">
+                          <span class="result__label">{object.label}</span>
+                          <span class="result__meta">{object.meta}</span>
+                        </span>
+                      </button>
+                    </li>
+                  </template>
+                </ul>
+              </section>
+            </template>
+          </template>
+          <template lwc:else>
+            <p class="results__empty">{noResultsMessage}</p>
+          </template>
+        </div>
+      </section>
+    </template>
+  </div>
+</template>

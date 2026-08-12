@@ -1,0 +1,115 @@
+:host {
+  display: block;
+}
+
+.header {
+  align-items: flex-start;
+  background: #f3f3f3;
+  border-bottom: 1px solid #c9c9c9;
+  color: #181818;
+  display: flex;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  height: auto;
+  justify-content: space-between;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.breadcrumbs {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  line-height: 1.25rem;
+  min-width: 0;
+  row-gap: 0.1rem;
+}
+
+.header__actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.mode-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #181818;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 400;
+  gap: 0.35rem;
+  min-height: 1.625rem;
+  padding: 0 0.15rem;
+}
+
+.mode-toggle:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid #0b5cab;
+  outline-offset: 1px;
+}
+
+.mode-toggle__track {
+  background: #706e6b;
+  border-radius: 1rem;
+  display: inline-flex;
+  height: 0.875rem;
+  padding: 0.125rem;
+  transition: background 120ms ease;
+  width: 1.625rem;
+}
+
+.mode-toggle__track--checked {
+  background: #0176d3;
+}
+
+.mode-toggle__thumb {
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
+  height: 0.625rem;
+  transform: translateX(0);
+  transition: transform 120ms ease;
+  width: 0.625rem;
+}
+
+.mode-toggle__track--checked .mode-toggle__thumb {
+  transform: translateX(0.75rem);
+}
+
+.breadcrumb-item {
+  align-items: center;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.breadcrumb-link {
+  background: transparent;
+  border: 0;
+  color: #0b5cab;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.2rem 0.15rem;
+}
+
+.breadcrumb-link:hover,
+.breadcrumb-link:focus {
+  text-decoration: underline;
+}
+
+.breadcrumb-current {
+  font-weight: 600;
+  overflow: hidden;
+  padding: 0.2rem 0.15rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb-separator {
+  color: #706e6b;
+  padding: 0 0.15rem;
+}

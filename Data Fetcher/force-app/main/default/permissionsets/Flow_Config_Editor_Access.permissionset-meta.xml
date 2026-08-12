@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Flow Config Editor Access</label>
+    <description
+  >Grants Flow builders access to the metadata services used by the reusable Flow configuration-editor framework.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <classAccesses>
+        <apexClass>FlowConfigApexTypeController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <pageAccesses>
+        <apexPage>FlowConfigApexTypeBridge</apexPage>
+        <enabled>true</enabled>
+    </pageAccesses>
+</PermissionSet>

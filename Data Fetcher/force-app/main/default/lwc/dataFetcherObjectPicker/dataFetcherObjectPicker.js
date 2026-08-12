@@ -12,7 +12,7 @@ import getObjects from '@salesforce/apex/DataFetcherObjectPickerController.getOb
 import {standardObjectOptions} from 'c/dataFetcherObjectPickerUtils';
 
 
-import {flowComboboxDefaults, formattedValue, getDataType, isReference} from 'c/dataFetcherCPECombobox';
+import {flowComboboxDefaults, formattedValue, getDataType, isReference} from 'c/dataFetcherCPEComboboxUtils';
 
 export default class dataFetcherObjectPicker extends LightningElement {
     @api name;
@@ -36,6 +36,9 @@ export default class dataFetcherObjectPicker extends LightningElement {
     @api allowFieldMultiselect = false;
 
     @api required = false;
+    @api fieldLevelHelp;
+
+    customValidityMessage = '';
 
     @track _objectType;
     @track _field;
@@ -82,7 +85,11 @@ export default class dataFetcherObjectPicker extends LightningElement {
             this.errors.push(error.body.message);
         } else if (data) {
             this.isLoadFinished = true;
-            this.objectTypes = data;
+            // Format options to include API name as sublabel
+            this.objectTypes = data.map(item => ({
+                ...item,
+                label: `${item.label} (${item.value})`
+            }));
         }
     }
 
@@ -234,6 +241,24 @@ export default class dataFetcherObjectPicker extends LightningElement {
             }
         });
         this.dispatchEvent(memberRefreshedEvt);
+    }
+
+    @api
+    setCustomValidity(message) {
+        this.customValidityMessage = message || '';
+        this.template.querySelector('lightning-combobox')?.setCustomValidity(this.customValidityMessage);
+    }
+
+    @api
+    reportValidity() {
+        const input = this.template.querySelector('lightning-combobox');
+        input?.setCustomValidity(this.customValidityMessage);
+        return input?.reportValidity() ?? !this.customValidityMessage;
+    }
+
+    @api
+    get validationMessage() {
+        return this.template.querySelector('lightning-combobox')?.validationMessage || this.customValidityMessage;
     }
 
     splitValues(originalString) {

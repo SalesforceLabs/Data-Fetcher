@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "Data Fetcher",
-      "versionName": "ver 3.2 - Object Picker Fix",
-      "versionNumber": "3.2.0.NEXT",
-      "ancestorVersion": "3.1.0.1"
+      "versionName": "ver 3.3 - Flow Config Editor Kit",
+      "versionNumber": "3.3.0.NEXT",
+      "ancestorVersion": "3.2.0.1"
     }
   ],
   "name": "Data Fetcher Salesforce Labs",

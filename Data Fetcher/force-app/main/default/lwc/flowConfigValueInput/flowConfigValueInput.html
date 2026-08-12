@@ -1,0 +1,23 @@
+<template>
+  <c-flow-config-resource-picker
+    label={label}
+    property-name={propertyName}
+    value={value}
+    value-data-type={valueDataType}
+    builder-context={builderContext}
+    accepted-types={acceptedTypes}
+    collection="exclude"
+    allow-manual
+    allow-literal
+    allow-record-fields
+    literal-type={valueType}
+    required={required}
+    placeholder={placeholder}
+    field-level-help={fieldLevelHelp}
+    automatic-output-variables={automaticOutputVariables}
+    api-version={apiVersion}
+    mode-toggle-label={modeToggleLabel}
+    mode-toggle-checked={modeToggleChecked}
+    onresourcechange={handleValueChange}
+  ></c-flow-config-resource-picker>
+</template>
