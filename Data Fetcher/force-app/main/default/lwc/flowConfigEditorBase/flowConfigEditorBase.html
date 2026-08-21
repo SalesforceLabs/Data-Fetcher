@@ -1,0 +1,25 @@
+<template>
+  <div class="editor">
+    <template lwc:if={hasValidationErrors}>
+      <section class="editor__errors" role="alert" aria-live="assertive">
+        <p class="editor__errors-title">Fix the following:</p>
+        <ul>
+          <template for:each={validationErrors} for:item="error">
+            <li key={error.key}>{error.errorString}</li>
+          </template>
+        </ul>
+      </section>
+    </template>
+
+    <c-flow-config-editor-form
+      schema={schema}
+      values={schemaValues}
+      value-data-types={schemaDataTypes}
+      object-types={schemaObjectTypes}
+      builder-context={builderContext}
+      automatic-output-variables={automaticOutputVariables}
+      api-version={apiVersion}
+      onconfigchange={handleConfigChange}
+    ></c-flow-config-editor-form>
+  </div>
+</template>

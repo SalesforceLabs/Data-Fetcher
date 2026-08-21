@@ -5,7 +5,8 @@
  * @last modified on  : 12-20-2023
  * @last modified by  : Josh Dayment
 **/
-import { api, track, LightningElement } from "lwc";
+import { api, track, wire, LightningElement } from "lwc";
+import { getListRecordsByName, getListInfoByName } from "lightning/uiListsApi";
 import getSObjects from "@salesforce/apex/DataFetcherController.getSObjects";
 import getAggregate from "@salesforce/apex/DataFetcherController.getAggregate";
 import getSearchObjects from "@salesforce/apex/DataFetcherController.getSearchObjects";
@@ -24,21 +25,94 @@ export default class DataFetcher extends LightningElement {
   @api objectName1 = 'Account';
   @api objectName2 = 'Account';
   @api debounceTime;
-  // Deprecated wire service properties - kept for backward compatibility only
   @api useWireService = false;
   @api listViewApiName;
   @api pageToken;
   @api pageSize = 50;
   @api sortBy;
+  @api sortByIsCustom = false;
   @api fields;
+  @api fieldsIsCustom = false;
+  @api nextPageToken;
+  @track _wireFields;
+  @track _wireSortBy;
   @track oldQuery;
   @track oldAggQuery;
   @track oldSearchQuery;
   @track displayError;
 
+  @wire(getListInfoByName, {
+    objectApiName: "$objectName1",
+    listViewApiName: "$listViewApiName"
+  })
+  wiredListInfo({ error, data }) {
+    if (!this.useWireService) return;
+
+    if (data && data.displayColumns) {
+      const columnFields = data.displayColumns
+        .map(col => `${this.objectName1}.${col.fieldApiName}`);
+
+      const additionalFields = this.fields && this.objectName1
+        ? this._parseFieldList(this.fields).map(f => {
+            return f.startsWith(`${this.objectName1}.`)
+              ? f
+              : `${this.objectName1}.${f}`;
+          })
+        : [];
+
+      const allFields = [...new Set([...columnFields, ...additionalFields])];
+
+      if (JSON.stringify(allFields) !== JSON.stringify(this._wireFields)) {
+        this._wireFields = allFields;
+      }
+    } else if (error) {
+      this.error = error?.body?.message || JSON.stringify(error);
+      this._fireFlowEvent("error", this.error);
+    }
+  }
+
+  @wire(getListRecordsByName, {
+    objectApiName: "$objectName1",
+    listViewApiName: "$listViewApiName",
+    optionalFields: "$_wireFields",
+    pageSize: "$pageSize",
+    sortBy: "$_wireSortBy",
+    pageToken: "$pageToken"
+  })
+  wiredListRecords({ error, data }) {
+    if (!this.useWireService) return;
+
+    if (data) {
+      this.error = undefined;
+      const flatRecords = this._transformUIApiRecords(data.records);
+      this.retrievedRecords = flatRecords;
+      this.firstRetrievedRecord = flatRecords.length > 0 ? flatRecords[0] : null;
+      this.nextPageToken = data.nextPageToken || null;
+      this._fireFlowEvent("retrievedRecords", this.retrievedRecords);
+      this._fireFlowEvent("firstRetrievedRecord", this.firstRetrievedRecord);
+      this._fireFlowEvent("nextPageToken", this.nextPageToken);
+    } else if (error) {
+      let errorMsg;
+      if (Array.isArray(error.body)) {
+        errorMsg = error.body.map(e => e.message).join('; ');
+      } else if (error.body && error.body.message) {
+        errorMsg = error.body.message;
+      } else {
+        errorMsg = JSON.stringify(error);
+      }
+      this.error = errorMsg;
+      this.retrievedRecords = [];
+      this.firstRetrievedRecord = null;
+      this._fireFlowEvent("error", this.error);
+    }
+  }
 
   renderedCallback() {
-    // Execute SOQL methods when parameters change
+    if (this.useWireService) {
+      this._computeWireParams();
+      return;
+    }
+
     if (this.queryString && this.queryString != this.oldQuery) {
       this._getRecords();
     }
@@ -46,10 +120,57 @@ export default class DataFetcher extends LightningElement {
     if (this.aggQueryString && this.aggQueryString != this.oldAggQuery){
       this._getAggregate();
     }
-    
+
     if (this.searchString && this.searchString != this.oldSearchQuery) {
       this._getSearchResults();
     }
+  }
+
+  _computeWireParams() {
+    const newSortBy = this.sortBy
+      ? this._parseFieldList(this.sortBy)
+      : undefined;
+
+    if (JSON.stringify(newSortBy) !== JSON.stringify(this._wireSortBy)) {
+      this._wireSortBy = newSortBy;
+    }
+  }
+
+  _parseFieldList(value) {
+    if (Array.isArray(value)) {
+      return value.map(item => String(item).trim()).filter(Boolean);
+    }
+    if (!value) {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map(item => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      // Older Data Fetcher versions persist comma-separated field names.
+    }
+    return String(value)
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+
+  _transformUIApiRecords(records) {
+    if (!records || !Array.isArray(records)) return [];
+    return records.map(record => {
+      const flat = {
+        attributes: { type: record.apiName || this.objectName1 },
+        Id: record.id
+      };
+      if (record.fields) {
+        Object.entries(record.fields).forEach(([key, field]) => {
+          flat[key] = field.value;
+        });
+      }
+      return flat;
+    });
   }
 
   handleOnChange() {

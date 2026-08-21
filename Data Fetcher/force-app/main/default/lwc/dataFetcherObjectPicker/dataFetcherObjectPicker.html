@@ -15,6 +15,6 @@
 
         <lightning-combobox name="objectTypeField" label={objectLabel} value={_objectType} placeholder={labels.none}
             options={objectTypes} disabled={isObjectDisabled} onchange={handleObjectChange}
-            required={required} field-level-help=""></lightning-combobox>
+            required={required} field-level-help={fieldLevelHelp}></lightning-combobox>
     </div>
 </template>

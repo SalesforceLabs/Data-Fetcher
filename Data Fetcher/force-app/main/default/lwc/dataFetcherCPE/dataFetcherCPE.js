@@ -1,206 +1,319 @@
-import { LightningElement, api, track } from 'lwc';
+import FlowConfigEditorBase from "c/flowConfigEditorBase";
 
-const DATA_TYPE = {
-    STRING: 'String',
-    BOOLEAN: 'Boolean',
-    NUMBER: 'Number',
-    INTEGER: 'Integer'
+const DEFAULT_VALUES = {
+  objectName1: "Account",
+  objectName2: "Account",
+  queryString: null,
+  searchString: null,
+  aggQueryString: null,
+  debounceTime: "300",
+  useWireService: false,
+  listViewApiName: null,
+  fields: null,
+  fieldsIsCustom: false,
+  pageSize: 50,
+  sortBy: null,
+  sortByIsCustom: false,
+  pageToken: null
 };
 
-const FLOW_EVENT_TYPE = {
-    DELETE: 'configuration_editor_input_value_deleted',
-    CHANGE: 'configuration_editor_input_value_changed'
-}
+const VALUE_PROPERTIES = [
+  "queryString",
+  "searchString",
+  "aggQueryString",
+  "debounceTime",
+  "listViewApiName",
+  "fields",
+  "pageSize",
+  "sortBy",
+  "pageToken"
+];
 
-export default class dataFetcherCPE extends LightningElement {
-    @api automaticOutputVariables;
-    typeValue;
-    _builderContext = {};
-    _values = [];
-    _flowVariables = [];
-    _typeMappings = [];
-    rendered;
-    @track isChecked = true;
+export default class DataFetcherCPE extends FlowConfigEditorBase {
+  objectName1 = DEFAULT_VALUES.objectName1;
+  objectName2 = DEFAULT_VALUES.objectName2;
+  queryString = DEFAULT_VALUES.queryString;
+  searchString = DEFAULT_VALUES.searchString;
+  aggQueryString = DEFAULT_VALUES.aggQueryString;
+  debounceTime = DEFAULT_VALUES.debounceTime;
+  useWireService = DEFAULT_VALUES.useWireService;
+  listViewApiName = DEFAULT_VALUES.listViewApiName;
+  fields = DEFAULT_VALUES.fields;
+  fieldsIsCustom = DEFAULT_VALUES.fieldsIsCustom;
+  pageSize = DEFAULT_VALUES.pageSize;
+  sortBy = DEFAULT_VALUES.sortBy;
+  sortByIsCustom = DEFAULT_VALUES.sortByIsCustom;
+  pageToken = DEFAULT_VALUES.pageToken;
+  valueDataTypes = {};
+  showSOSL = true;
+  mappingRepairScheduled = false;
+  repairedMappingsKey = "";
+  additionalFieldsSortable = false;
 
-    @track inputValues = {
-        objectName1: { value: null, valueDataType: null, isCollection: false, label: 'Object Name' },
-        objectName2: { value: 'Account', valueDataType: null, isCollection: false, label: 'Second Object Name' },
-        queryString: { value: null, valueDataType: null, isCollection: false, label: 'SOQL Query String' },
-        searchString: { value: null, valueDataType: null, isCollection: false, label: 'SOSL Query String' },
-        aggQueryString: { value: null, valueDataType: null, isCollection: false, label: 'Aggregate Query String' },
-        debounceTime: {value: '300', valueDataType: null, isCollection: false, label: 'Debounce Time'},
-        useWireService: { value: false, valueDataType: null, isCollection: false, label: 'Use Wire Service' },
-        listViewApiName: { value: null, valueDataType: null, isCollection: false, label: 'List View API Name' },
-        fields: { value: null, valueDataType: null, isCollection: false, label: 'Fields (comma-separated)' },
-        pageSize: { value: 50, valueDataType: null, isCollection: false, label: 'Page Size' },
-        sortBy: { value: null, valueDataType: null, isCollection: false, label: 'Sort By Field' },
-        pageToken: { value: null, valueDataType: null, isCollection: false, label: 'Page Token' },
+  configurationChanged(source) {
+    super.configurationChanged(source);
+    if (source === "inputVariables") {
+      this.hydrateInputs();
+    } else if (source === "genericTypeMappings") {
+      this.adoptGenericMappings();
+    }
+    if (source === "inputVariables" || source === "genericTypeMappings") {
+      this.scheduleGenericMappingRepair();
+    }
+  }
+
+  hydrateInputs() {
+    this.objectName1 = this.input(
+      "objectName1",
+      this.genericType("T", DEFAULT_VALUES.objectName1)
+    );
+    this.objectName2 = this.input(
+      "objectName2",
+      this.genericType("S", DEFAULT_VALUES.objectName2)
+    );
+    this.useWireService = Boolean(
+      this.input("useWireService", DEFAULT_VALUES.useWireService)
+    );
+
+    const dataTypes = {};
+    VALUE_PROPERTIES.forEach((propertyName) => {
+      this[propertyName] = this.input(
+        propertyName,
+        DEFAULT_VALUES[propertyName],
+        this.inputDataType(propertyName) === "reference"
+      );
+      dataTypes[propertyName] = this.inputDataType(
+        propertyName,
+        propertyName === "pageSize" ? "Number" : "String"
+      );
+    });
+    this.valueDataTypes = dataTypes;
+    this.fieldsIsCustom = this.resolveCustomMode("fields");
+    this.sortByIsCustom = this.resolveCustomMode(
+      "sortBy",
+      this.isLegacyCustomSortBy
+    );
+  }
+
+  adoptGenericMappings() {
+    this.objectName1 = this.inputVariable("objectName1")
+      ? this.input("objectName1", DEFAULT_VALUES.objectName1)
+      : this.genericType("T", this.objectName1 || DEFAULT_VALUES.objectName1);
+    this.objectName2 = this.inputVariable("objectName2")
+      ? this.input("objectName2", DEFAULT_VALUES.objectName2)
+      : this.genericType("S", this.objectName2 || DEFAULT_VALUES.objectName2);
+  }
+
+  scheduleGenericMappingRepair() {
+    if (this.mappingRepairScheduled) {
+      return;
+    }
+    this.mappingRepairScheduled = true;
+    Promise.resolve().then(() => {
+      this.mappingRepairScheduled = false;
+      this.repairGenericMappings();
+    });
+  }
+
+  repairGenericMappings() {
+    const primaryType =
+      this.objectName1 || this.genericType("T", DEFAULT_VALUES.objectName1);
+    const secondaryType =
+      this.objectName2 || this.genericType("S", DEFAULT_VALUES.objectName2);
+    const repairKey = `${primaryType}:${secondaryType}`;
+    if (repairKey === this.repairedMappingsKey) {
+      return;
+    }
+    this.repairedMappingsKey = repairKey;
+    if (this.genericType("T") !== primaryType) {
+      this.setGenericType("T", primaryType);
+    }
+    if (this.genericType("S") !== secondaryType) {
+      this.setGenericType("S", secondaryType);
+    }
+  }
+
+  get hideSOQLInputs() {
+    return !this.useWireService;
+  }
+
+  get queryStringDataType() {
+    return this.valueDataType("queryString");
+  }
+
+  get searchStringDataType() {
+    return this.valueDataType("searchString");
+  }
+
+  get aggQueryStringDataType() {
+    return this.valueDataType("aggQueryString");
+  }
+
+  get debounceTimeDataType() {
+    return this.valueDataType("debounceTime");
+  }
+
+  get listViewApiNameDataType() {
+    return this.valueDataType("listViewApiName");
+  }
+
+  get pageSizeDataType() {
+    return this.valueDataType("pageSize", "Number");
+  }
+
+  get fieldsDataType() {
+    return this.valueDataType("fields");
+  }
+
+  get sortByDataType() {
+    return this.valueDataType("sortBy");
+  }
+
+  get pageTokenDataType() {
+    return this.valueDataType("pageToken");
+  }
+
+  valueDataType(propertyName, fallback = "String") {
+    return this.valueDataTypes[propertyName] || fallback;
+  }
+
+  get isLegacyCustomSortBy() {
+    return (
+      this.sortByDataType.toLowerCase() === "reference" ||
+      /[\s,]/.test(String(this.sortBy || ""))
+    );
+  }
+
+  resolveCustomMode(propertyName, fallback = false) {
+    const modeProperty = `${propertyName}IsCustom`;
+    return this.inputVariable(modeProperty)
+      ? Boolean(this.input(modeProperty, false))
+      : this.valueDataType(propertyName).toLowerCase() === "reference" ||
+          fallback;
+  }
+
+  handlePrimaryObjectChange(event) {
+    this.handleObjectChange("objectName1", "T", event);
+  }
+
+  handleSecondaryObjectChange(event) {
+    this.handleObjectChange("objectName2", "S", event);
+  }
+
+  handleObjectChange(propertyName, typeName, event) {
+    const objectType =
+      event.detail?.newValue ?? event.detail?.objectType ?? null;
+    if (event.detail?.isInit && this[propertyName] === objectType) {
+      this.scheduleGenericMappingRepair();
+      return;
+    }
+    const previousObjectType = this[propertyName];
+    this.clearErrors();
+    this[propertyName] = objectType;
+    this.repairedMappingsKey = "";
+    // flowConfigObjectPicker owns the standard input-value event. This editor
+    // only coordinates the generic output type and dependent field values.
+    this.setGenericType(typeName, objectType || DEFAULT_VALUES[propertyName]);
+    if (propertyName === "objectName1" && previousObjectType !== objectType) {
+      if (!this.fieldsIsCustom) {
+        this.clearFieldSelection("fields");
+      }
+      if (!this.sortByIsCustom) {
+        this.clearFieldSelection("sortBy");
+      }
+    }
+  }
+
+  clearFieldSelection(propertyName) {
+    this[propertyName] = null;
+    this.valueDataTypes = {
+      ...this.valueDataTypes,
+      [propertyName]: "String"
     };
+    this.clearInput(propertyName, "String");
+  }
 
-    @api get builderContext() {
-        return this._builderContext;
+  handleValueChange(event) {
+    const { name, newValue, newValueDataType } = event.detail;
+    if (!VALUE_PROPERTIES.includes(name)) {
+      return;
     }
+    this.clearErrors();
+    this[name] = newValue;
+    this.valueDataTypes = {
+      ...this.valueDataTypes,
+      [name]: newValueDataType
+    };
+  }
 
-    set builderContext(value) {
-        this._builderContext = value;
+  handleFieldValueChange(event) {
+    this.handleValueChange(event);
+  }
+
+  handleSortByModeChange(event) {
+    this.clearErrors();
+    this.sortByIsCustom = Boolean(event.detail?.customMode);
+    this.setInput("sortByIsCustom", this.sortByIsCustom, "Boolean");
+  }
+
+  handleFieldsModeChange(event) {
+    this.clearErrors();
+    this.fieldsIsCustom = Boolean(event.detail?.customMode);
+    this.setInput("fieldsIsCustom", this.fieldsIsCustom, "Boolean");
+  }
+
+  handleUseWireServiceChange(event) {
+    this.clearErrors();
+    this.useWireService = event.target.checked;
+    this.setInput("useWireService", this.useWireService, "Boolean");
+  }
+
+  handleShowSOSLChange(event) {
+    this.showSOSL = event.target.checked;
+  }
+
+  validateConfiguration() {
+    const errors = [];
+    if (!this.objectName1) {
+      errors.push({
+        key: "objectName1",
+        errorString: "Object Name is required."
+      });
     }
-
-    @api get inputVariables() {
-        return this._values;
+    if (this.useWireService && !this.listViewApiName) {
+      errors.push({
+        key: "listViewApiName",
+        errorString: "List View API Name is required in wire service mode."
+      });
     }
-
-    set inputVariables(value) {
-        this._values = value;
-        this.initializeValues();
+    if (!this.isValidPageSize) {
+      errors.push({
+        key: "pageSize",
+        errorString: "Page Size must be a whole number between 1 and 2000."
+      });
     }
-
-    @api get genericTypeMappings() {
-        return this._genericTypeMappings;
+    if (!this.isValidDebounceTime) {
+      errors.push({
+        key: "debounceTime",
+        errorString: "Debounce Time must be zero or a positive number."
+      });
     }
-    set genericTypeMappings(value) {
-        this._typeMappings = value;
-        this.initializeTypeMappings();
+    return errors;
+  }
+
+  get isValidPageSize() {
+    if (this.pageSizeDataType.toLowerCase() === "reference") {
+      return true;
     }
+    const value = Number(this.pageSize);
+    return Number.isInteger(value) && value >= 1 && value <= 2000;
+  }
 
-    // Computed property to hide SOQL inputs when wire service is enabled
-    get hideSOQLInputs() {
-        return !this.inputValues.useWireService.value;
+  get isValidDebounceTime() {
+    if (this.debounceTimeDataType.toLowerCase() === "reference") {
+      return true;
     }
-
-    /* LIFECYCLE HOOKS */
-   
-        
-
-    renderedCallback() {
-        if (!this.rendered) {
-            this.rendered = true;
-            for (let flowCombobox of this.template.querySelectorAll('joshdaymentlabs-data_fetcher_c_p_e_combobox')) {
-                flowCombobox.builderContext = this.builderContext;
-                flowCombobox.automaticOutputVariables = this.automaticOutputVariables;
-            }             
-        }
-                
-    }
-
-    /* ACTION FUNCTIONS */
-    initializeValues(value) {
-        if (this._values && this._values.length) {
-            this._values.forEach(curInputParam => {
-                if (curInputParam.name && this.inputValues[curInputParam.name]) {                    
-                    if (this.inputValues[curInputParam.name].serialized) {
-                        this.inputValues[curInputParam.name].value = JSON.parse(curInputParam.value);
-                    } else {
-                        this.inputValues[curInputParam.name].value = curInputParam.value;
-                    }
-                    this.inputValues[curInputParam.name].valueDataType = curInputParam.valueDataType;
-                }
-            });
-        }
-    }
-
-    initializeTypeMappings() {
-        this._typeMappings.forEach((typeMapping) => {
-            
-            if (typeMapping.name && typeMapping.value) {
-                this.typeValue = typeMapping.value;
-            }
-        });
-    }
-
-    /* EVENT HANDLERS */
-
-    handleObjectChange(event) {
-        if (event.target && event.detail) {
-            
-            let typeValue = event.detail.objectType;
-            const typeName = 'T';
-            const dynamicTypeMapping = new CustomEvent('configuration_editor_generic_type_mapping_changed', {
-                composed: true,
-                cancelable: false,
-                bubbles: true,
-                detail: {
-                    typeName,
-                    typeValue,
-                }
-            });
-            this.dispatchEvent(dynamicTypeMapping);
-            if (this.inputValues.objectName1.value != typeValue) {
-                this.inputValues.objectName1.value = typeValue;
-                this.dispatchFlowValueChangeEvent(event.currentTarget.name, typeValue, 'String');
-            }
-
-            
-        }
-    }
-
-    handleSecondObjectChange(event) {
-        if (event.target && event.detail) {
-            let typeValue = event.detail.objectType;
-            const typeName = 'S';
-            const dynamicTypeMapping = new CustomEvent('configuration_editor_generic_type_mapping_changed', {
-                composed: true,
-                cancelable: false,
-                bubbles: true,
-                detail: {
-                    typeName,
-                    typeValue,
-                }
-            });
-            this.dispatchEvent(dynamicTypeMapping);
-            if (this.inputValues.objectName2.value != typeValue) {
-                this.inputValues.objectName2.value = typeValue;
-                this.dispatchFlowValueChangeEvent(event.currentTarget.name, typeValue, 'String');
-            }
-
-            
-        }
-    }
-
-    handleFlowComboboxValueChange(event) {
-        if (event.target && event.detail) {
-            this.dispatchFlowValueChangeEvent(event.target.name, event.detail.newValue, event.detail.newValueDataType);
-        };
-    }
-
-
-    dispatchFlowValueChangeEvent(id, newValue, dataType = DATA_TYPE.STRING) {
-        console.log('in dispatchFlowValueChangeEvent: ' + id, newValue, dataType);
-        if (this.inputValues[id] && this.inputValues[id].serialized) {
-            newValue = JSON.stringify(newValue);
-        }
-        const valueChangedEvent = new CustomEvent(FLOW_EVENT_TYPE.CHANGE, {
-            bubbles: true,
-            cancelable: false,
-            composed: true,
-            detail: {
-                name: id,
-                newValue: newValue ? newValue : null,
-                newValueDataType: dataType
-            }
-        });
-        this.dispatchEvent(valueChangedEvent);
-    }
-
-    handleCheckboxChange(event) {
-        this.isChecked = event.target.checked;
-    }
-
-    handleUseWireServiceChange(event) {
-        this.inputValues.useWireService.value = event.target.checked;
-        this.dispatchFlowValueChangeEvent('useWireService', event.target.checked, 'Boolean');
-    }
-
-    handleInputChange(event) {
-        const fieldName = event.target.name;
-        const value = event.target.value;
-        if (this.inputValues[fieldName]) {
-            this.inputValues[fieldName].value = value;
-            let dataType = 'String';
-            if (fieldName === 'pageSize') {
-                dataType = 'Integer';
-            }
-            this.dispatchFlowValueChangeEvent(fieldName, value, dataType);
-        }
-    }
-
+    const value = Number(this.debounceTime);
+    return Number.isFinite(value) && value >= 0;
+  }
 }

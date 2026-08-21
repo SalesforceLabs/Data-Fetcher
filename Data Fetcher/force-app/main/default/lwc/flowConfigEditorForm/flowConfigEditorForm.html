@@ -1,0 +1,92 @@
+<template>
+  <div class="form">
+    <template for:each={controls} for:item="control">
+      <div class="form__row" key={control.name}>
+        <template lwc:if={control.isScalar}>
+          <c-flow-config-value-input
+            data-validatable
+            data-property={control.name}
+            label={control.label}
+            property-name={control.name}
+            value={control.value}
+            value-data-type={control.dataType}
+            value-type={control.type}
+            required={control.required}
+            field-level-help={control.helpText}
+            placeholder={control.placeholder}
+            builder-context={builderContext}
+            automatic-output-variables={automaticOutputVariables}
+            api-version={apiVersion}
+            onvaluechange={handleValueChange}
+          ></c-flow-config-value-input>
+        </template>
+
+        <template lwc:elseif={control.isResource}>
+          <c-flow-config-resource-picker
+            data-validatable
+            data-property={control.name}
+            label={control.label}
+            property-name={control.name}
+            value={control.value}
+            accepted-types="SObject"
+            collection={control.collectionMode}
+            required={control.required}
+            allow-manual={control.allowManual}
+            field-level-help={control.helpText}
+            placeholder={control.placeholder}
+            builder-context={builderContext}
+            automatic-output-variables={automaticOutputVariables}
+            api-version={apiVersion}
+            onresourcechange={handleResourceChange}
+          ></c-flow-config-resource-picker>
+        </template>
+
+        <template lwc:elseif={control.isField}>
+          <div class="form__dependent">
+            <template lwc:if={control.allowCustom}>
+              <c-flow-config-field-input
+                data-validatable
+                data-property={control.name}
+                label={control.label}
+                property-name={control.name}
+                value={control.value}
+                value-data-type={control.dataType}
+                object-api-name={control.objectApiName}
+                multiple={control.multiple}
+                sortable={control.sortable}
+                accepted-types={control.acceptedTypes}
+                required={control.required}
+                field-level-help={control.helpText}
+                placeholder={control.placeholder}
+                builder-context={builderContext}
+                automatic-output-variables={automaticOutputVariables}
+                api-version={apiVersion}
+                allow-custom
+                custom-mode={control.customMode}
+                onvaluechange={handleFieldInputChange}
+                onmodechange={handleFieldModeChange}
+              ></c-flow-config-field-input>
+            </template>
+            <template lwc:else>
+              <c-flow-config-field-picker
+                data-validatable
+                data-property={control.name}
+                label={control.label}
+                property-name={control.name}
+                value={control.value}
+                object-api-name={control.objectApiName}
+                multiple={control.multiple}
+                sortable={control.sortable}
+                accepted-types={control.acceptedTypes}
+                required={control.required}
+                field-level-help={control.helpText}
+                placeholder={control.placeholder}
+                onfieldchange={handleFieldChange}
+              ></c-flow-config-field-picker>
+            </template>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+</template>

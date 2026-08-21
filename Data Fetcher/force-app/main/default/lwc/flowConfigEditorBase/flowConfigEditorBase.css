@@ -1,0 +1,16 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.editor__errors {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #ea001e;
+  background: #fef1ee;
+  font-size: 0.8125rem;
+}
+
+.editor__errors-title {
+  font-weight: 700;
+}

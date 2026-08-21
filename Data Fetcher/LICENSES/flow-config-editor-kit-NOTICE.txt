@@ -1,0 +1,8 @@
+Flow Config Editor Kit for Salesforce
+Copyright 2026 Fast Track Digital
+
+This product includes software developed by Fast Track Digital.
+
+Salesforce, Flow Builder, Lightning, and related marks are trademarks of
+Salesforce, Inc. This project is independent and is not endorsed by or
+affiliated with Salesforce, Inc.

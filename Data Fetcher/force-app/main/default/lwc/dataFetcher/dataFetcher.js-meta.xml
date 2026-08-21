@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>64.0</apiVersion>
+    <apiVersion>67.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Data Fetcher</masterLabel>
     <targets>
@@ -21,7 +21,16 @@
             <property name="searchResults1" type="{S[]}" role="outputOnly"/>
             <property name="objectName1" type="String" default="Account"/>
             <property name="objectName2" type="String" default="Account"/>
-            <property name="debounceTime" type="String" default="300"/>           
+            <property name="debounceTime" type="String" default="300"/>
+            <property name="useWireService" type="Boolean" default="false" label="Use Wire Service"/>
+            <property name="listViewApiName" type="String" label="List View API Name"/>
+            <property name="fields" type="String" label="Fields"/>
+            <property name="fieldsIsCustom" type="Boolean" default="false" label="Use Custom Additional Fields Value"/>
+            <property name="pageSize" type="Integer" default="50" label="Page Size"/>
+            <property name="sortBy" type="String" label="Sort By"/>
+            <property name="sortByIsCustom" type="Boolean" default="false" label="Use Custom Sort By Value"/>
+            <property name="pageToken" type="String" label="Page Token"/>
+            <property name="nextPageToken" type="String" role="outputOnly" label="Next Page Token" description="Token for retrieving the next page of list view records"/>
         </targetConfig>
     </targetConfigs>
 </LightningComponentBundle>

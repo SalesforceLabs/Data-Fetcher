@@ -1,0 +1,258 @@
+<template>
+  <div class="picker" onfocusout={handleFocusOut}>
+    <div class="picker__label">
+      <template lwc:if={required}><abbr title="required">*</abbr></template>
+      <span>{label}</span>
+      <template lwc:if={hasHelpText}>
+        <lightning-helptext content={fieldLevelHelp}></lightning-helptext>
+      </template>
+    </div>
+
+    <template lwc:if={showSelectedState}>
+      <div
+        class="selection"
+        role="combobox"
+        aria-expanded={isOpen}
+        tabindex="0"
+        onclick={handleEdit}
+        onkeydown={handleSelectionKeydown}
+      >
+        <div class="selection__pill" title={value}>
+          <lightning-icon
+            class="selection__type"
+            icon-name={selectedIconName}
+            size="x-small"
+            alternative-text=""
+          ></lightning-icon>
+          <span class="selection__primary" title={selectedDisplayTitle}>
+            <template lwc:if={hasSelectedParentPath}>
+              <span class="selection__parent">{selectedParentPath}</span>
+              <span class="selection__separator" aria-hidden="true"
+                >{selectedPathSeparator}</span
+              >
+            </template>
+            <span class="selection__leaf">{selectedLeaf}</span>
+          </span>
+          <button
+            class="selection__clear"
+            type="button"
+            title="Clear selected resource"
+            aria-label="Clear selected resource"
+            onclick={handleClear}
+          >
+            <lightning-icon
+              icon-name="utility:close"
+              size="xx-small"
+              alternative-text=""
+            ></lightning-icon>
+          </button>
+        </div>
+      </div>
+    </template>
+    <template lwc:else>
+      <lightning-input
+        type="search"
+        variant="label-hidden"
+        label={label}
+        value={inputDisplayValue}
+        placeholder={placeholder}
+        required={required}
+        onfocus={handleFocus}
+        oninput={handleSearch}
+        onchange={handleSearch}
+        onkeydown={handleKeydown}
+      ></lightning-input>
+    </template>
+    <template lwc:if={showSelectedValidationMessage}>
+      <p class="picker__error" role="alert">{validationMessage}</p>
+    </template>
+
+    <template lwc:if={showResults}>
+      <section
+        class="results"
+        style={popoverStyle}
+        aria-label="Flow resources"
+        onmousedown={handleResultsMouseDown}
+        onclick={handleResultsClick}
+      >
+        <c-flow-config-picker-header
+          class="results__header"
+          items={breadcrumbItems}
+          location-label="Resource location"
+          close-label="Close resources"
+          mode-toggle-label={effectiveModeToggleLabel}
+          mode-toggle-checked={modeToggleChecked}
+          onnavigate={handleBreadcrumb}
+          onclose={handleClose}
+        ></c-flow-config-picker-header>
+
+        <div class="results__scroll" onscroll={handleResultsScroll}>
+          <template lwc:if={hasResults}>
+            <template lwc:if={showGroupedResults}>
+              <template for:each={displayGroups} for:item="group">
+                <section class="resource-group" key={group.key}>
+                  <h3 class="resource-group__title">{group.label}</h3>
+                  <ul class="results__list" role="listbox">
+                    <template for:each={group.resources} for:item="resource">
+                      <li key={resource.id} role="presentation">
+                        <button
+                          class={resource.optionClass}
+                          type="button"
+                          role="option"
+                          aria-selected={resource.isSelected}
+                          data-key={resource.key}
+                          onclick={handleSelect}
+                        >
+                          <template lwc:if={resource.isApiSystemContainer}>
+                            <svg
+                              class="result__icon result__api-system-icon"
+                              viewBox="0 0 32 32"
+                              aria-hidden="true"
+                            >
+                              <circle cx="14" cy="14" r="10"></circle>
+                              <path
+                                d="M4 14h20M14 4c-3 3-4 6-4 10s1 7 4 10M14 4c3 3 4 6 4 10 0 2-.3 3.8-.9 5.5"
+                              ></path>
+                              <path
+                                class="result__api-cursor"
+                                d="m19 18 9 3.5-3.6 1.3 2.3 4.5-2.8 1.4-2.2-4.5-3.2 2.3z"
+                              ></path>
+                            </svg>
+                          </template>
+                          <template lwc:elseif={resource.isLightningComponent}>
+                            <svg
+                              class="result__icon result__component-icon"
+                              viewBox="0 0 1000 1000"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M611 200H442c-25 0-47 15-56 38L281 509c-8 20 7 41 28 41h172l-64 224c-6 21 20 35 34 18l263-312c17-19 3-50-23-50H561l114-184c12-20-2-46-26-46z"
+                              ></path>
+                            </svg>
+                          </template>
+                          <template lwc:else>
+                            <lightning-icon
+                              class="result__icon"
+                              icon-name={resource.iconName}
+                              size="x-small"
+                              alternative-text=""
+                            ></lightning-icon>
+                          </template>
+                          <span class="result__body">
+                            <span class="result__label">{resource.label}</span>
+                            <span class="result__meta">{resource.meta}</span>
+                          </span>
+                          <template lwc:if={resource.browseFields}>
+                            <lightning-icon
+                              class="result__chevron"
+                              icon-name="utility:chevronright"
+                              size="xx-small"
+                              alternative-text="Browse"
+                            ></lightning-icon>
+                          </template>
+                        </button>
+                      </li>
+                    </template>
+                  </ul>
+                </section>
+              </template>
+            </template>
+            <template lwc:else>
+              <ul class="results__list" role="listbox">
+                <template for:each={filteredResources} for:item="resource">
+                  <li key={resource.id} role="presentation">
+                    <button
+                      class={resource.optionClass}
+                      type="button"
+                      role="option"
+                      aria-selected={resource.isSelected}
+                      data-key={resource.key}
+                      onclick={handleSelect}
+                    >
+                      <template lwc:if={resource.isApiSystemContainer}>
+                        <svg
+                          class="result__icon result__api-system-icon"
+                          viewBox="0 0 32 32"
+                          aria-hidden="true"
+                        >
+                          <circle cx="14" cy="14" r="10"></circle>
+                          <path
+                            d="M4 14h20M14 4c-3 3-4 6-4 10s1 7 4 10M14 4c3 3 4 6 4 10 0 2-.3 3.8-.9 5.5"
+                          ></path>
+                          <path
+                            class="result__api-cursor"
+                            d="m19 18 9 3.5-3.6 1.3 2.3 4.5-2.8 1.4-2.2-4.5-3.2 2.3z"
+                          ></path>
+                        </svg>
+                      </template>
+                      <template lwc:elseif={resource.isLightningComponent}>
+                        <svg
+                          class="result__icon result__component-icon"
+                          viewBox="0 0 1000 1000"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M611 200H442c-25 0-47 15-56 38L281 509c-8 20 7 41 28 41h172l-64 224c-6 21 20 35 34 18l263-312c17-19 3-50-23-50H561l114-184c12-20-2-46-26-46z"
+                          ></path>
+                        </svg>
+                      </template>
+                      <template lwc:else>
+                        <lightning-icon
+                          class="result__icon"
+                          icon-name={resource.iconName}
+                          size="x-small"
+                          alternative-text=""
+                        ></lightning-icon>
+                      </template>
+                      <span class="result__body">
+                        <span class="result__label">{resource.label}</span>
+                        <span class="result__meta">{resource.meta}</span>
+                      </span>
+                      <template lwc:if={resource.browseFields}>
+                        <lightning-icon
+                          class="result__chevron"
+                          icon-name="utility:chevronright"
+                          size="xx-small"
+                          alternative-text="Browse relationship"
+                        ></lightning-icon>
+                      </template>
+                    </button>
+                  </li>
+                </template>
+              </ul>
+            </template>
+          </template>
+          <template lwc:else>
+            <p class="results__empty">{noResultsMessage}</p>
+          </template>
+        </div>
+
+        <div class="results__actions">
+          <template lwc:if={showManualAction}>
+            <button class="manual" type="button" onclick={handleManualSelect}>
+              Use reference <code>{manualReference}</code>
+            </button>
+          </template>
+          <template lwc:if={showLiteralAction}>
+            <button class="manual" type="button" onclick={handleLiteralSelect}>
+              {literalActionLabel}
+            </button>
+          </template>
+          <template lwc:if={hasValue}>
+            <button class="remove" type="button" onclick={handleClear}>
+              Remove current selection
+            </button>
+          </template>
+        </div>
+      </section>
+    </template>
+    <template lwc:if={showApexBridge}>
+      <iframe
+        class="apex-bridge"
+        src={apexBridgeUrl}
+        title="Apex type metadata bridge"
+        tabindex="-1"
+      ></iframe>
+    </template>
+  </div>
+</template>

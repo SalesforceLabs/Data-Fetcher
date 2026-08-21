@@ -1,0 +1,43 @@
+<template>
+  <div class="field-input">
+    <template lwc:if={customMode}>
+      <c-flow-config-value-input
+        label={label}
+        property-name={propertyName}
+        value={value}
+        value-data-type={valueDataType}
+        value-type="String"
+        builder-context={builderContext}
+        automatic-output-variables={automaticOutputVariables}
+        api-version={apiVersion}
+        required={required}
+        placeholder={placeholder}
+        field-level-help={fieldLevelHelp}
+        mode-toggle-label={modeToggleLabel}
+        mode-toggle-checked={customMode}
+        onvaluechange={handleCustomValueChange}
+        onmodetoggle={handleModeToggle}
+      ></c-flow-config-value-input>
+    </template>
+    <template lwc:else>
+      <c-flow-config-field-picker
+        label={label}
+        property-name={propertyName}
+        object-api-name={objectApiName}
+        value={value}
+        multiple={multiple}
+        sortable={sortable}
+        accepted-types={acceptedTypes}
+        max-results={maxResults}
+        max-relationship-depth={maxRelationshipDepth}
+        required={required}
+        placeholder={placeholder}
+        field-level-help={fieldLevelHelp}
+        mode-toggle-label={modeToggleLabel}
+        mode-toggle-checked={customMode}
+        onfieldchange={handleFieldChange}
+        onmodetoggle={handleModeToggle}
+      ></c-flow-config-field-picker>
+    </template>
+  </div>
+</template>

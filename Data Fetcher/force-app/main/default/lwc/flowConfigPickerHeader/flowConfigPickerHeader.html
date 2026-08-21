@@ -1,0 +1,50 @@
+<template>
+  <header class="header">
+    <nav class="breadcrumbs" aria-label={locationLabel}>
+      <template for:each={items} for:item="item">
+        <span class="breadcrumb-item" key={item.key}>
+          <template lwc:if={item.showSeparator}>
+            <span class="breadcrumb-separator" aria-hidden="true">›</span>
+          </template>
+          <template lwc:if={item.isCurrent}>
+            <span class="breadcrumb-current">{item.label}</span>
+          </template>
+          <template lwc:else>
+            <button
+              class="breadcrumb-link"
+              type="button"
+              data-depth={item.depth}
+              onclick={handleNavigate}
+            >
+              {item.label}
+            </button>
+          </template>
+        </span>
+      </template>
+    </nav>
+    <div class="header__actions">
+      <template lwc:if={showModeToggle}>
+        <button
+          class="mode-toggle"
+          type="button"
+          role="switch"
+          aria-checked={modeToggleChecked}
+          onclick={handleModeToggle}
+        >
+          <span>{modeToggleLabel}</span>
+          <span class={modeToggleTrackClass} aria-hidden="true">
+            <span class="mode-toggle__thumb"></span>
+          </span>
+        </button>
+      </template>
+      <lightning-button-icon
+        icon-name="utility:close"
+        alternative-text={closeLabel}
+        title={closeLabel}
+        variant="bare"
+        size="small"
+        onclick={handleClose}
+      ></lightning-button-icon>
+    </div>
+  </header>
+</template>
