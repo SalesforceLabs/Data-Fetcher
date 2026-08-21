@@ -3,17 +3,6 @@
   position: relative;
 }
 
-.apex-bridge {
-  border: 0;
-  height: 1px;
-  left: -10000px;
-  opacity: 0;
-  pointer-events: none;
-  position: fixed;
-  top: -10000px;
-  width: 1px;
-}
-
 .picker__label {
   align-items: center;
   color: #444;

@@ -7,7 +7,7 @@
         <target>lightning__FlowScreen</target>
     </targets>
     <targetConfigs>
-        <targetConfig targets="lightning__FlowScreen" configurationEditor="c-data-fetcher-c-p-e">
+        <targetConfig targets="lightning__FlowScreen" configurationEditor="joshdaymentlabs-data-fetcher-c-p-e">
             <propertyType name="T" extends="SObject"  label="Object API Name" description="Select the API Name of the SObject to Query"/>
             <propertyType name="S" extends="SObject"  label="Second Object API Name" description="Select a Second Object for SOSL Query"/>
             <property name="queryString" label="SOQL Query" type="String" />

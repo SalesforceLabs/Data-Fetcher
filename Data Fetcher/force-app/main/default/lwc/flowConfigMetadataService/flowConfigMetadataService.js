@@ -33,22 +33,12 @@ export function loadSharedMetadata(key, loader) {
   return metadataRequests.get(key);
 }
 
-export function loadApexMembers(apexClassName, fallbackLoader) {
-  return loadSharedMetadata(`apex:${apexClassName}`, async () => {
-    let members = [];
-    try {
-      members = parseMetadataList(
-        await describeApexType({ apexClassName }),
-        "members"
-      );
-    } catch {
-      // Managed Apex source may be hidden; the Visualforce Tooling API bridge
-      // is the supported fallback for that case.
-    }
-    return members.length
-      ? members
-      : parseMetadataList(await fallbackLoader(), "members");
-  });
+export function loadApexMembers(apexClassName) {
+  return loadSharedMetadata(`apex:${apexClassName}`, () =>
+    describeApexType({ apexClassName }).then((result) =>
+      parseMetadataList(result, "members")
+    )
+  );
 }
 
 export function loadHierarchySettings() {
