@@ -391,7 +391,7 @@ describe("c-flow-config-resource-picker", () => {
     expect(results).toEqual(["Outputs from Call Subflow > Matching Count"]);
   });
 
-  it("distinguishes API and System containers from Custom Label values", async () => {
+  it("distinguishes API and System containers with chevrons and icons", async () => {
     const element = createElement("c-flow-config-resource-picker", {
       is: FlowConfigResourcePicker
     });
@@ -413,11 +413,6 @@ describe("c-flow-config-resource-picker", () => {
         'button[data-key="global-system"] svg.result__api-system-icon'
       )
     ).not.toBeNull();
-    expect(
-      element.shadowRoot.querySelector(
-        'button[data-key="global-label"] lightning-icon'
-      ).iconName
-    ).toBe("utility:world");
     const globalContainers = [
       ...element.shadowRoot.querySelectorAll('button[data-key^="global-"]')
     ];
@@ -430,109 +425,8 @@ describe("c-flow-config-resource-picker", () => {
         'button[data-key="$GlobalConstant.True"] .result__chevron'
       )
     ).toBeNull();
-
-    element.shadowRoot.querySelector('button[data-key="global-label"]').click();
-    await flushPromises();
-    const frame = element.shadowRoot.querySelector("iframe.apex-bridge");
-    frame.contentWindow.postMessage = jest.fn();
-    const bridgeOrigin = "https://example--c.vf.force.com";
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: bridgeOrigin,
-        data: { channel: "flow-config-apex-type", action: "ready" }
-      })
-    );
-    await flushPromises();
-    const [request] = frame.contentWindow.postMessage.mock.calls[0];
-    expect(request.action).toBe("describeCustomLabels");
-
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: bridgeOrigin,
-        data: {
-          channel: "flow-config-apex-type",
-          action: "result",
-          requestId: request.requestId,
-          success: true,
-          labels: [
-            {
-              name: "$Label.example_Label",
-              label: "Example Label"
-            }
-          ]
-        }
-      })
-    );
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-
-    const labelOption = element.shadowRoot.querySelector("button.result");
-    expect(labelOption.querySelector(".result__label").textContent).toBe(
-      "Example Label"
-    );
-    expect(labelOption.querySelector("lightning-icon").iconName).toBe(
-      "utility:text"
-    );
   });
 
-  it("rehydrates saved Custom Label values with their text icon", async () => {
-    const element = createElement("c-flow-config-resource-picker", {
-      is: FlowConfigResourcePicker
-    });
-    element.valueDataType = "reference";
-    element.value = "{!$Label.example_Label}";
-    element.builderContext = {};
-    document.body.appendChild(element);
-    await flushPromises();
-
-    const frame = element.shadowRoot.querySelector("iframe.apex-bridge");
-    frame.contentWindow.postMessage = jest.fn();
-    const bridgeOrigin = "https://example--c.vf.force.com";
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: bridgeOrigin,
-        data: { channel: "flow-config-apex-type", action: "ready" }
-      })
-    );
-    await flushPromises();
-    const [request] = frame.contentWindow.postMessage.mock.calls[0];
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: bridgeOrigin,
-        data: {
-          channel: "flow-config-apex-type",
-          action: "result",
-          requestId: request.requestId,
-          success: true,
-          labels: [
-            {
-              name: "$Label.example_Label",
-              label: "Example Label"
-            }
-          ]
-        }
-      })
-    );
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-
-    expect(
-      element.shadowRoot.querySelector("lightning-icon.selection__type")
-        .iconName
-    ).toBe("utility:text");
-    expect(
-      element.shadowRoot.querySelector(".selection__leaf").textContent
-    ).toBe("Example Label");
-  });
 
   it("rehydrates saved hierarchy-setting fields with their field icon", async () => {
     describeHierarchySettings.mockResolvedValue(
@@ -1932,79 +1826,6 @@ describe("c-flow-config-resource-picker", () => {
     expect(iconFor("global-org")).toBe("utility:company");
   });
 
-  it("enriches automatic subflow outputs from the current Flow metadata", async () => {
-    window.history.replaceState(
-      {},
-      "",
-      "/builder_platform_interaction/flowBuilder.app?flowId=301000000000000AAA"
-    );
-    const element = createElement("c-flow-config-resource-picker", {
-      is: FlowConfigResourcePicker
-    });
-    element.acceptedTypes = "String";
-    element.automaticOutputVariables = {
-      Tool_Schedule_Payments_Calculator: [
-        { apiName: "message", dataType: "string", label: "Message" }
-      ]
-    };
-    document.body.appendChild(element);
-    await flushPromises();
-    await flushPromises();
-
-    const frame = element.shadowRoot.querySelector("iframe.apex-bridge");
-    frame.contentWindow.postMessage = jest.fn();
-    const bridgeOrigin = "https://example--c.vf.force.com";
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: bridgeOrigin,
-        data: { channel: "flow-config-apex-type", action: "ready" }
-      })
-    );
-    await flushPromises();
-
-    const [request] = frame.contentWindow.postMessage.mock.calls[0];
-    expect(request).toMatchObject({
-      action: "describeFlowElements",
-      flowId: "301000000000000AAA"
-    });
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: bridgeOrigin,
-        data: {
-          channel: "flow-config-apex-type",
-          action: "result",
-          requestId: request.requestId,
-          success: true,
-          elements: [
-            {
-              name: "Tool_Schedule_Payments_Calculator",
-              label: "Tool - Schedule Payments Calculator",
-              kind: "Subflow",
-              iconName: "utility:flow"
-            }
-          ]
-        }
-      })
-    );
-    await flushPromises();
-    await flushPromises();
-
-    element.shadowRoot
-      .querySelector("lightning-input")
-      .dispatchEvent(new CustomEvent("focus"));
-    await flushPromises();
-    expect(
-      element.shadowRoot.querySelector(".resource-group__title").textContent
-    ).toBe("Subflows");
-    const row = element.shadowRoot.querySelector("button.result");
-    expect(row.querySelector(".result__label").textContent).toBe(
-      "Outputs from Tool - Schedule Payments Calculator"
-    );
-    expect(row.querySelector(".result__meta").textContent).toBe("Outputs");
-    expect(row.querySelector("lightning-icon").iconName).toBe("utility:flow");
-  });
 
   it("keeps the friendly parent path and leaf visible before and after reload", async () => {
     const builderContext = {
@@ -2350,88 +2171,6 @@ describe("c-flow-config-resource-picker", () => {
     ).toBe("Contact Name");
   });
 
-  it("falls back to the Visualforce bridge when managed Apex source is hidden", async () => {
-    describeApexType.mockResolvedValueOnce("[]");
-    const element = createElement("c-flow-config-resource-picker", {
-      is: FlowConfigResourcePicker
-    });
-    element.acceptedTypes = "String,Number";
-    element.collection = "exclude";
-    element.allowRecordFields = true;
-    element.builderContext = {
-      variables: [
-        {
-          name: "ApexDefined",
-          dataType: "Apex",
-          apexClass: "paytram__PaytramPaymentTemplate",
-          isCollection: false
-        }
-      ]
-    };
-    document.body.appendChild(element);
-    element.shadowRoot
-      .querySelector("lightning-input")
-      .dispatchEvent(new CustomEvent("focus"));
-    await flushPromises();
-
-    element.shadowRoot
-      .querySelector('button[data-key="{!ApexDefined}"]')
-      .click();
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-
-    const frame = element.shadowRoot.querySelector("iframe.apex-bridge");
-    expect(frame).not.toBeNull();
-    frame.contentWindow.postMessage = jest.fn();
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: "https://example--c.vf.force.com",
-        data: { channel: "flow-config-apex-type", action: "ready" }
-      })
-    );
-    await flushPromises();
-
-    expect(frame.contentWindow.postMessage).toHaveBeenCalledTimes(1);
-    const [request, targetOrigin] =
-      frame.contentWindow.postMessage.mock.calls[0];
-    expect(targetOrigin).toBe("https://example--c.vf.force.com");
-    expect(request).toMatchObject({
-      channel: "flow-config-apex-type",
-      action: "describeApexType",
-      apexClassName: "paytram__PaytramPaymentTemplate"
-    });
-
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source: frame.contentWindow,
-        origin: targetOrigin,
-        data: {
-          channel: "flow-config-apex-type",
-          action: "result",
-          requestId: request.requestId,
-          success: true,
-          members: [
-            {
-              name: "amount",
-              label: "Amount",
-              dataType: "Number",
-              isCollection: false
-            }
-          ]
-        }
-      })
-    );
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-
-    expect(element.shadowRoot.querySelector(".result__label").textContent).toBe(
-      "Amount"
-    );
-  });
 
   it("uses the roomier side and expands upward from a stable bottom edge", async () => {
     const element = createElement("c-flow-config-resource-picker", {

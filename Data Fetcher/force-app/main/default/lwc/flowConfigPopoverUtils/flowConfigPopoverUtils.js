@@ -131,7 +131,7 @@ export function createProgressiveRenderController(onReady) {
 }
 
 export function setPopoverHostActive(host, active) {
-  if (!host) {
+  if (!host?.style) {
     return;
   }
   host.style.position = active ? "relative" : "";

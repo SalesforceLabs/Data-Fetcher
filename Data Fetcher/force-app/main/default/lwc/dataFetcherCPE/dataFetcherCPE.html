@@ -25,14 +25,16 @@
     onchange={handleUseWireServiceChange}
   ></lightning-input>
 
-  <lightning-input
-    type="checkbox"
-    label="Show SOSL Configuration"
-    name="showSOSL"
-    checked={showSOSL}
-    field-level-help="When checked, SOSL configuration options are shown."
-    onchange={handleShowSOSLChange}
-  ></lightning-input>
+  <template lwc:if={hideSOQLInputs}>
+    <lightning-input
+      type="checkbox"
+      label="Show SOSL Configuration"
+      name="showSOSL"
+      checked={showSOSL}
+      field-level-help="When checked, SOSL configuration options are shown."
+      onchange={handleShowSOSLChange}
+    ></lightning-input>
+  </template>
 
   <c-flow-config-object-picker
     data-validatable

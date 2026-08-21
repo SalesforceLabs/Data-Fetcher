@@ -64,14 +64,6 @@ export const GLOBAL_CONTAINERS = [
     supportedTypes: ["String", "Number", "Boolean", "Date", "DateTime", "Time"]
   },
   {
-    key: "global-label",
-    label: "Custom Label",
-    namespace: "$Label",
-    iconName: "utility:world",
-    supportedTypes: ["String"],
-    dynamic: true
-  },
-  {
     key: "global-flow",
     label: "Running Flow Interview",
     namespace: "$Flow",

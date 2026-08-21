@@ -24,7 +24,6 @@ import { describeRecordPath } from "c/flowConfigSchemaService";
 import {
   loadApexMembers as loadSharedApexMembers,
   loadHierarchySettings,
-  loadSharedMetadata,
   parseMetadataList
 } from "c/flowConfigMetadataService";
 import {
@@ -50,8 +49,6 @@ import {
   searchNestedItems
 } from "c/flowConfigResourceModel";
 
-const APEX_BRIDGE_CHANNEL = "flow-config-apex-type";
-const APEX_BRIDGE_TIMEOUT = 15000;
 
 export default class FlowConfigResourcePicker extends LightningElement {
   @api label = "Flow Resource";
@@ -99,12 +96,6 @@ export default class FlowConfigResourcePicker extends LightningElement {
   editTransitionTimer = null;
   hasPendingEdit = false;
   selectedResourceSnapshot = null;
-  showApexBridge = false;
-  apexBridgeReady = false;
-  apexBridgeOrigin = "";
-  apexBridgeRequests = new Map();
-  apexBridgeSequence = 0;
-  boundApexBridgeHandler;
   selectedHydrationKey = "";
   selectedRecordHydrationKey = "";
   selectedGlobalHydrationKey = "";
@@ -125,7 +116,6 @@ export default class FlowConfigResourcePicker extends LightningElement {
   constructor() {
     super();
     this.boundViewportHandler = this.handleViewportChange.bind(this);
-    this.boundApexBridgeHandler = this.handleApexBridgeMessage.bind(this);
     this.viewportController = createPopoverViewportController(
       this.boundViewportHandler
     );
@@ -140,9 +130,7 @@ export default class FlowConfigResourcePicker extends LightningElement {
     );
   }
 
-  connectedCallback() {
-    window.addEventListener("message", this.boundApexBridgeHandler);
-  }
+  connectedCallback() {}
 
   renderedCallback() {
     this.viewportController.setActive(this.isOpen);
@@ -2108,63 +2096,16 @@ export default class FlowConfigResourcePicker extends LightningElement {
   }
 
   loadApexMembers(apexClassName) {
-    return loadSharedApexMembers(apexClassName, () =>
-      this.describeApexTypeThroughVisualforce(apexClassName)
-    );
+    return loadSharedApexMembers(apexClassName);
   }
 
-  get apexBridgeUrl() {
-    const parentOrigin = encodeURIComponent(window.location.origin);
-    return `/apex/FlowConfigApexTypeBridge?parentOrigin=${parentOrigin}`;
-  }
-
-  describeApexTypeThroughVisualforce(apexClassName) {
-    return this.requestMetadataBridge(
-      "describeApexType",
-      { apexClassName },
-      "members"
-    );
-  }
-
-  describeFlowElementsThroughVisualforce(flowId) {
-    return this.requestMetadataBridge(
-      "describeFlowElements",
-      { flowId },
-      "elements"
-    );
-  }
-
-  describeCustomLabelsThroughVisualforce() {
-    return this.requestMetadataBridge("describeCustomLabels", {}, "labels");
-  }
 
   async loadDynamicGlobalItems(namespace) {
     if (this.dynamicGlobalCache[namespace]) {
       return this.dynamicGlobalCache[namespace];
     }
     let items = [];
-    if (namespace === "$Label") {
-      const labels = await loadSharedMetadata("global:$Label", () =>
-        this.describeCustomLabelsThroughVisualforce()
-      );
-      items = parseMetadataList(labels, "labels")
-        .map((label, index) => {
-          const option = {
-            key: `custom-label-${label.name || index}`,
-            label: label.label || label.name,
-            name: label.name,
-            reference: toFlowReference(label.name),
-            dataType: "String",
-            isCollection: false,
-            // The globe identifies the $Label container. Individual labels
-            // are String resources, matching Flow's Aa treatment.
-            iconName: "utility:text",
-            meta: toFlowReference(label.name)
-          };
-          return this.isOptionCompatible(option) ? option : null;
-        })
-        .filter(Boolean);
-    } else if (namespace === "$Setup") {
+    if (namespace === "$Setup") {
       const settings = parseMetadataList(
         await loadHierarchySettings(),
         "settings"
@@ -2212,111 +2153,6 @@ export default class FlowConfigResourcePicker extends LightningElement {
     return items;
   }
 
-  requestMetadataBridge(action, payload, responseKey) {
-    this.showApexBridge = true;
-    const requestId = `metadata-${Date.now()}-${++this.apexBridgeSequence}`;
-    return new Promise((resolve, reject) => {
-      // The bridge is a separate Visualforce document, so it needs a bounded wait.
-      // eslint-disable-next-line @lwc/lwc/no-async-operation
-      const timeoutId = window.setTimeout(() => {
-        this.apexBridgeRequests.delete(requestId);
-        reject(
-          new Error(
-            "The metadata bridge did not respond. Confirm that the Visualforce page is enabled for your profile."
-          )
-        );
-      }, APEX_BRIDGE_TIMEOUT);
-      this.apexBridgeRequests.set(requestId, {
-        requestId,
-        action,
-        payload,
-        responseKey,
-        resolve,
-        reject,
-        timeoutId,
-        sent: false
-      });
-      Promise.resolve().then(() => this.flushApexBridgeRequests());
-    });
-  }
-
-  handleApexBridgeMessage(event) {
-    const frame = this.template.querySelector("iframe.apex-bridge");
-    if (!frame || event.source !== frame.contentWindow) {
-      return;
-    }
-    const message = event.data;
-    if (!message || message.channel !== APEX_BRIDGE_CHANNEL) {
-      return;
-    }
-    if (message.action === "ready") {
-      if (!this.isTrustedVisualforceOrigin(event.origin)) {
-        return;
-      }
-      this.apexBridgeOrigin = event.origin;
-      this.apexBridgeReady = true;
-      this.flushApexBridgeRequests();
-      return;
-    }
-    if (event.origin !== this.apexBridgeOrigin) {
-      return;
-    }
-    const pending = this.apexBridgeRequests.get(message.requestId);
-    if (!pending) {
-      return;
-    }
-    window.clearTimeout(pending.timeoutId);
-    this.apexBridgeRequests.delete(message.requestId);
-    if (message.success) {
-      pending.resolve(message[pending.responseKey] || []);
-    } else {
-      pending.reject(
-        new Error(message.error || "Unable to inspect Flow metadata.")
-      );
-    }
-  }
-
-  isTrustedVisualforceOrigin(origin) {
-    try {
-      const parsed = new URL(origin);
-      if (parsed.protocol !== "https:") {
-        return false;
-      }
-      const host = parsed.hostname.toLowerCase();
-      return (
-        host.endsWith(".visual.force.com") ||
-        host.endsWith(".vf.force.com") ||
-        host.endsWith(".visualforce.com")
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  flushApexBridgeRequests() {
-    if (!this.apexBridgeReady || !this.apexBridgeOrigin) {
-      return;
-    }
-    const frame = this.template.querySelector("iframe.apex-bridge");
-    if (!frame?.contentWindow) {
-      return;
-    }
-    this.apexBridgeRequests.forEach((pending) => {
-      if (pending.sent) {
-        return;
-      }
-      pending.sent = true;
-      frame.contentWindow.postMessage(
-        {
-          channel: APEX_BRIDGE_CHANNEL,
-          action: pending.action,
-          requestId: pending.requestId,
-          ...pending.payload
-        },
-        this.apexBridgeOrigin
-      );
-    });
-  }
 
   get currentFlowId() {
     let locationText = window.location.href;
@@ -2328,45 +2164,7 @@ export default class FlowConfigResourcePicker extends LightningElement {
     return locationText.match(/\b(?:300|301)[a-zA-Z0-9]{12,15}\b/)?.[0] || null;
   }
 
-  hydrateFlowElementMetadata() {
-    if (this.flowMetadataRequestStarted || !this.currentFlowId) {
-      return;
-    }
-    const knownRoots = new Set([
-      ...(this._builderContext.variables || []).map((item) => item.name),
-      ...(this._builderContext.actionCalls || []).map(
-        (item) => item.name || item.apiName
-      ),
-      ...(this._builderContext.apexPluginCalls || []).map(
-        (item) => item.name || item.apiName
-      )
-    ]);
-    const hasUnknownAutomaticRoot = Object.keys(this.automaticOutputMap).some(
-      (path) =>
-        !path.includes(".") &&
-        !knownRoots.has(path) &&
-        !this.findScreenReferenceContext(path)
-    );
-    if (!hasUnknownAutomaticRoot) {
-      return;
-    }
-    this.flowMetadataRequestStarted = true;
-    loadSharedMetadata(`flow:${this.currentFlowId}`, () =>
-      this.describeFlowElementsThroughVisualforce(this.currentFlowId)
-    )
-      .then((elements) => {
-        this.flowElementMetadata = (elements || []).reduce(
-          (metadata, element) => ({
-            ...metadata,
-            [element.name]: element
-          }),
-          {}
-        );
-      })
-      .catch(() => {
-        // Automatic outputs remain usable with their API names as a fallback.
-      });
-  }
+  hydrateFlowElementMetadata() {}
 
   async openGlobalContainer(container) {
     const globalResource = this._allResources.find(
@@ -2597,12 +2395,6 @@ export default class FlowConfigResourcePicker extends LightningElement {
     window.clearTimeout(this.focusOutTimer);
     window.clearTimeout(this.editTransitionTimer);
     this.viewportController.disconnect();
-    window.removeEventListener("message", this.boundApexBridgeHandler);
-    this.apexBridgeRequests.forEach((pending) => {
-      window.clearTimeout(pending.timeoutId);
-      pending.reject(new Error("The Apex type picker was closed."));
-    });
-    this.apexBridgeRequests.clear();
   }
 
   commitReference(reference, resource) {
